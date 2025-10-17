@@ -7,7 +7,7 @@ from flask_cors import CORS
 app = Flask(__name__)
 CORS(app)
 
-API_KEY = os.environ.get("GROQ_API_KEY", "")
+API_KEY = "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"
 GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
 MODEL_NAME = "openai/gpt-oss-120b"
 
