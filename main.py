@@ -13,7 +13,7 @@ CORS(app)
 
 API_KEY = os.environ.get("GROQ_API_KEY", "")
 GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
-MODEL_NAME = "GPT-OSS-120B"
+MODEL_NAME = "openai/gpt-oss-120b"
 
 
 def load_cache():
