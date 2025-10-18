@@ -1,3 +1,4 @@
+[![license](https://img.shields.io/github/license/iamtraction/google-translate.svg)](LICENSE)
 # Elarus
 
 Elarus provides high-performance, real-time translation services powered by Groq's LPU infrastructure. It offers a simple JSON API for AI-powered translations with smart caching and rate limiting.
@@ -233,7 +234,3 @@ Common error codes:
 ## Live Playground
 
 Test the API with our interactive playground: [https://elarus.vercel.app](https://elarus.vercel.app)
-
-## License
-
-This project is licensed under the **MIT License**, read [LICENSE](LICENSE).
