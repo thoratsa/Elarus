@@ -10,7 +10,7 @@ from langdetect.lang_detect_exception import LangDetectException
 
 DetectorFactory.seed = 0
 
-REDIS_URL = os.environ.get('REDIS_URL')
+REDIS_URL = os.environ.get('REDIS_URL_REDIS_URL')
 
 r = None
 if REDIS_URL:
