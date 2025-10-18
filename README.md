@@ -1,4 +1,4 @@
-# Elarus: The Lightning-Fast Translator API
+# Elarus: Translation Microservice API
 
 Elarus is a **powerful, serverless microservice** designed for speed and efficiency. Built on Flask and powered by the Groq API, Elarus delivers high-quality, real-time translations with astonishingly low latency. It is the perfect backend for any application requiring instant, reliable language support.
 
