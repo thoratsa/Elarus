@@ -37,7 +37,8 @@ curl -X POST [https://elarus.vercel.app/translate](https://elarus.vercel.app/tra
 
 The API returns a JSON object containing the translated text and language details. The `source_language` is accurately detected, and a `status` field indicates if the result came from the cache or was newly generated:
 
-```json{
+```json
+{
   "source_language": "English", 
   "target_language": "Spanish",
   "translated_text": "La API está lista para la integración.",
