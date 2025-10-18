@@ -28,7 +28,7 @@ Your request must include a JSON body with the following two keys:
 Use this command in any terminal to test the API and see the result:
 
 ```bash
-curl -X POST [https://elarus-api.vercel.app/translate](https://elarus-api.vercel.app/translate) \
+curl -X POST https://elarus-api.vercel.app/translate \
   -H "Content-Type: application/json" \
   -d '{"text": "The API is ready for integration.", "target_lang": "Spanish"}'
 ```
