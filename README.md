@@ -64,29 +64,6 @@ curl -X POST https://elarus.vercel.app/api/retranslate \
 curl https://elarus.vercel.app/api/health
 ```
 
-## Local Development
-
-### Installation
-
-1. Clone the repository
-2. Install dependencies:
-```bash
-pip install -r requirements.txt
-```
-
-3. Set environment variables:
-```bash
-export GROQ_API_KEY='your_groq_api_key'
-export REDIS_URL_REDIS_URL='your_redis_url'
-```
-
-4. Run the server:
-```bash
-python app.py
-```
-
-5. Open http://localhost:5000 to access the playground
-
 ## Features
 
 - **AI-Powered Translations**: Powered by Groq's GPT-OSS-120B model
