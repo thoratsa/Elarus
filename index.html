@@ -3,14 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Translation API Playground</title>
+    <title>Elarus - Translation API</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">
         <header class="header">
-            <h1>Translation API Playground</h1>
-            <p>Test the translation API in real-time with this interactive playground</p>
+            <h1>Elarus</h1>
+            <div class="subtitle">Translation API Playground</div>
+            <div class="tagline">High-performance translation microservice powered by AI</div>
         </header>
         
         <main class="content">
@@ -18,7 +19,7 @@
                 <div class="input-section">
                     <div class="form-group">
                         <label for="text">Text to Translate (Max 2000 characters):</label>
-                        <textarea id="text" placeholder="Enter text to translate..." maxlength="2000">Hello! How are you today? This is a test of the translation API.</textarea>
+                        <textarea id="text" placeholder="Enter text to translate..." maxlength="2000">Hello! How are you today? This is a test of the Elarus translation API.</textarea>
                         <div class="char-counter">
                             <span id="charCount">0</span>/2000 characters
                         </div>
@@ -34,7 +35,7 @@
                             Translate
                         </button>
                         <button class="btn btn-secondary" onclick="retranslateText()" id="retranslateBtn">
-                            Retranslate (Force Refresh)
+                            Retranslate
                         </button>
                     </div>
                 </div>
@@ -44,10 +45,10 @@
                 </div>
                 
                 <div class="api-info">
-                    <h3>API Endpoints:</h3>
-                    <p><strong>POST</strong> <code>/api/translate</code> - Standard translation with caching</p>
+                    <h3>Elarus API Endpoints</h3>
+                    <p><strong>POST</strong> <code>/api/translate</code> - Standard translation with intelligent caching</p>
                     <p><strong>POST</strong> <code>/api/retranslate</code> - Force fresh translation (bypass cache)</p>
-                    <p><strong>GET</strong> <code>/api/health</code> - Health check and system status</p>
+                    <p><strong>GET</strong> <code>/api/health</code> - System status and health check</p>
                     <p><strong>Base URL:</strong> <code>https://elarus.vercel.app</code></p>
                 </div>
             </div>
