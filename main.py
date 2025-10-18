@@ -17,7 +17,7 @@ if REDIS_URL:
     try:
         r = redis.from_url(REDIS_URL, decode_responses=True)
         r.ping()
-    except Exception as e:
+    except Exception:
         r = None
 
 app = Flask(__name__)
@@ -46,7 +46,7 @@ def check_rate_limit(client_id):
         
         r.set(key, current_time, ex=RATE_LIMIT_SECONDS * 2)
         return True
-    except Exception as e:
+    except Exception:
         return True
 
 def get_source_language(text):
@@ -54,6 +54,9 @@ def get_source_language(text):
         return detect(text).upper()
     except LangDetectException:
         return "Unknown"
+
+def _get_client_ip():
+    return request.headers.get('X-Forwarded-For', request.remote_addr).split(',')[0].strip()
 
 def _process_translation(text_to_translate, target_lang, client_ip, force_refresh=False):
     if not check_rate_limit(client_ip):
@@ -73,25 +76,14 @@ def _process_translation(text_to_translate, target_lang, client_ip, force_refres
                     "translated_text": cached_result['translated_text'],
                     "status": "cached"
                 }), 200
-        except Exception as e:
+        except Exception:
             pass
     
     max_tokens_calculated = min(2000, len(text_to_translate) * 2 + 50) 
     
     status_type = "reviewed" if force_refresh else "generated"
 
-    # --- Prompt and Response Logic for LLM ---
-
-    if force_refresh:
-        # Use JSON output for forced review to ensure reliable parsing
-        system_prompt = f"""You are a professional translator. Translate the user's text into {target_lang}. 
-        Respond ONLY with a single JSON object containing the key 'translated_text' and the translation as its value."""
-        response_format = {"type": "json_object"}
-    else:
-        # Use raw output for speed on standard requests
-        system_prompt = f"You are a professional translator. Translate the user's text into {target_lang}. Only return the translated text. Do not include any explanations, greetings, or punctuation outside of the translation itself."
-        response_format = None
-
+    system_prompt = f"You are a professional translator. Translate the user's text into {target_lang}. Respond ONLY with the translation text and nothing else. Do not include any explanations, greetings, code blocks, or punctuation outside of the translation itself."
 
     headers = {
         "Authorization": f"Bearer {API_KEY}",
@@ -107,9 +99,6 @@ def _process_translation(text_to_translate, target_lang, client_ip, force_refres
         "temperature": 0.1,
         "max_tokens": max_tokens_calculated
     }
-
-    if response_format:
-        payload["response_format"] = response_format
     
     try:
         groq_response = requests.post(GROQ_API_URL, headers=headers, data=json.dumps(payload))
@@ -118,22 +107,13 @@ def _process_translation(text_to_translate, target_lang, client_ip, force_refres
 
         raw_content = groq_data['choices'][0]['message']['content'].strip()
 
-        if force_refresh:
-            # Parse the strict JSON output
-            try:
-                parsed_data = json.loads(raw_content)
-                translated_text = parsed_data.get('translated_text', '').strip()
-            except json.JSONDecodeError:
-                return jsonify({"error": "LLM failed to return valid JSON during review."}), 500
-        else:
-            # Use raw string output for standard generation
-            translated_text = raw_content
+        translated_text = raw_content
+        if translated_text.startswith('```') and translated_text.endswith('```'):
+            translated_text = '\n'.join(translated_text.split('\n')[1:-1]).strip()
 
         if not translated_text:
-            return jsonify({"error": "LLM returned empty or unparseable translation text."}), 500
+            return jsonify({"error": "LLM returned empty or unparseable translation text. Contact administrator for debug logs."}), 500
 
-        # --- Cache Update and Final Response ---
-        
         response_data = {
             "source_language": source_language_code,
             "target_language": target_lang,
@@ -150,7 +130,7 @@ def _process_translation(text_to_translate, target_lang, client_ip, force_refres
                     "model": MODEL_NAME
                 }
                 r.set(cache_key, json.dumps(cache_data), ex=CACHE_EXPIRY_SECONDS)
-            except Exception as e:
+            except Exception:
                 pass
         
         return jsonify(response_data), 200
@@ -165,7 +145,7 @@ def _process_translation(text_to_translate, target_lang, client_ip, force_refres
 
 @app.route('/translate', methods=['POST'])
 def translate():
-    client_ip = request.headers.get('X-Forwarded-For', request.remote_addr).split(',')[0].strip()
+    client_ip = _get_client_ip()
     
     if not API_KEY:
         return jsonify({"error": "API key not configured."}), 500
@@ -185,7 +165,7 @@ def translate():
 
 @app.route('/review', methods=['POST'])
 def review():
-    client_ip = request.headers.get('X-Forwarded-For', request.remote_addr).split(',')[0].strip()
+    client_ip = _get_client_ip()
     
     if not API_KEY:
         return jsonify({"error": "API key not configured."}), 500
