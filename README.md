@@ -1,66 +1,197 @@
-# Elarus: Translation Microservice API
+# Elarus Translation API
 
-Elarus is a **powerful, serverless microservice** designed for speed and efficiency. Built on Flask and powered by the Groq API, Elarus delivers high-quality, real-time translations with astonishingly low latency. It is the perfect backend for any application requiring instant, reliable language support.
+Elarus provides high-performance, real-time translation services powered by Groq's LPU infrastructure. It offers a simple JSON API for AI-powered translations with smart caching and rate limiting.
 
----
+## API endpoints
 
-## API Usage: Quick Start
+The service provides three main endpoints for translations and system status.
 
-The easiest way to use Elarus is by sending a **POST** request to the live, deployed endpoint.
+**Live Playground**: [https://elarus.vercel.app](https://elarus.vercel.app)
 
-### API Endpoint Details
+### Translate
+```http
+POST /api/translate
+```
+Standard translation with intelligent caching.
 
-| Method | URL | 
- | ----- | ----- | 
-| **POST** | `https://elarus-api.vercel.app/translate` | 
+### Retranslate
+```http
+POST /api/retranslate
+```
+Force fresh translation, bypassing cache.
 
-### Request Payload (The Data to Send)
+### Health Check
+```http
+GET /api/health
+```
+Check API status and configuration.
 
-Your request must include a JSON body with the following two keys:
+## Quick Start
 
-| Parameter | Type | Required | Description |
-| ----- | ----- | ----- | ----- | 
-| `text` | string | Yes | The source text you want to translate. | 
-| `target_lang` | string | Yes | The desired language for the translation (e.g., "Spanish", "German", "Japanese"). | 
+### Using the API
 
-### Test the API (Using `curl`)
-
-Use this command in any terminal to test the API and see the result:
+Translate text from English to Spanish:
 
 ```bash
-curl -X POST https://elarus-api.vercel.app/translate \
+curl -X POST https://elarus.vercel.app/api/translate \
   -H "Content-Type: application/json" \
-  -d '{"text": "The API is ready for integration.", "target_lang": "Spanish"}'
+  -d '{"text": "Hello, how are you today?", "target_lang": "Spanish"}'
 ```
 
-### Example Success Response
-
-The API returns a JSON object containing the translated text and language details. The `source_language` is accurately detected, and a `status` field indicates if the result came from the cache or was newly generated:
-
+Response:
 ```json
 {
-  "source_language": "English", 
+  "source_language": "EN",
   "target_language": "Spanish",
-  "translated_text": "La API está lista para la integración.",
-  "status": "cached" 
+  "translated_text": "Hola, ¿cómo estás hoy?",
+  "status": "generated"
 }
 ```
 
-## Key Features & How It Works (Performance & Quality)
+### Force Fresh Translation
 
-Elarus is optimized for speed, security, and efficiency:
+Get a new translation, bypassing cache:
 
-1.  **Integrated Rate Limiting:** The API implements a strict **1 request per second (RPS) limit per IP address** using the Redis cache. This prevents abuse and manages unexpected costs associated with the Groq API. Hitting this limit will return a `429 Too Many Requests` status.
-    
-2.  **Accurate Source Language:** The API explicitly instructs the LLM to identify the original text's language, providing an accurate value (e.g., `"English"`, `"French"`) in the `source_language` field of the response.
-    
-3.  **Blazing Speed via Groq:** The translation is handled by Groq's specialized Language Processing Unit (LPU) infrastructure, resulting in near-instantaneous API responses.
-    
-4.  **External Caching Layer (Redis):** The API is connected to a dedicated, external **Upstash Redis** instance. This allows the service to check the cache for an existing translation before calling the expensive Groq API. This ensures reliable, permanent persistence across all serverless function calls.
-    
-5.  **Simple Integration (CORS):** The service is configured with **Cross-Origin Resource Sharing (CORS)** enabled, meaning any client can easily integrate with the API without security restrictions.
-    
+```bash
+curl -X POST https://elarus.vercel.app/api/retranslate \
+  -H "Content-Type: application/json" \
+  -d '{"text": "Hello, how are you today?", "target_lang": "French"}'
+```
 
-----------
+### Check Service Status
 
-Thanks for checking out Elarus! We hope this makes integrating powerful, fast translation into your project simple and easy.
+```bash
+curl https://elarus.vercel.app/api/health
+```
+
+## Local Development
+
+### Installation
+
+1. Clone the repository
+2. Install dependencies:
+```bash
+pip install -r requirements.txt
+```
+
+3. Set environment variables:
+```bash
+export GROQ_API_KEY='your_groq_api_key'
+export REDIS_URL_REDIS_URL='your_redis_url'
+```
+
+4. Run the server:
+```bash
+python app.py
+```
+
+5. Open http://localhost:5000 to access the playground
+
+## Features
+
+- **AI-Powered Translations**: Powered by Groq's GPT-OSS-120B model
+- **Smart Caching**: Redis-based caching for improved performance
+- **Rate Limiting**: 1 request per second per IP address
+- **Auto Language Detection**: Automatically detects source language
+- **Modern Dark UI**: Full-screen playground with dark theme
+- **JSON API**: Clean, consistent JSON responses
+
+## Usage Examples
+
+### Python
+
+```python
+import requests
+
+def translate_text(text, target_lang):
+    response = requests.post(
+        'https://elarus.vercel.app/api/translate',
+        json={'text': text, 'target_lang': target_lang}
+    )
+    return response.json()
+
+# Usage
+result = translate_text('Good morning', 'Japanese')
+print(f"Translation: {result['translated_text']}")
+```
+
+### JavaScript
+
+```javascript
+async function translateText(text, targetLang) {
+  const response = await fetch('https://elarus.vercel.app/api/translate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text, target_lang: targetLang })
+  });
+  return await response.json();
+}
+
+// Usage
+translateText('Thank you', 'German')
+  .then(result => console.log(result.translated_text));
+```
+
+## Supported Languages
+
+Elarus supports all languages available in Groq's GPT-OSS-120B model, including but not limited to:
+
+- English, Spanish, French, German, Italian, Portuguese
+- Chinese, Japanese, Korean, Arabic, Russian
+- And 100+ other languages
+
+## Response Format
+
+### Success Response
+```json
+{
+  "source_language": "EN",
+  "target_language": "Spanish",
+  "translated_text": "Texto traducido",
+  "status": "cached"
+}
+```
+
+### Error Response
+```json
+{
+  "error": "Rate limit exceeded",
+  "details": "Try again in 1 second(s)",
+  "status_code": 429
+}
+```
+
+## Rate Limits
+
+- **1 request per second** per IP address
+- Automatic rate limiting with Redis
+- 429 status code when limit exceeded
+
+## Text Limits
+
+- Maximum text length: **2000 characters**
+- Input validation for text and language format
+
+## Deployment
+
+The API is deployed on Vercel with serverless architecture. Key files:
+
+- `app.py` - Main Flask application
+- `index.html` - Playground interface
+- `style.css` - Dark theme styling
+- `script.js` - Frontend functionality
+
+## Support
+
+For issues and questions:
+1. Test with the [playground](https://elarus.vercel.app)
+2. Check the health endpoint for service status
+3. Ensure you're within rate limits
+
+## License
+
+This project is licensed under the MIT License, check [LICENSE](LICENSE) for more information.
+
+---
+
+**Elarus** - Fast, reliable AI translation API.
