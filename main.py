@@ -6,7 +6,7 @@ from flask_cors import CORS
 import redis
 import time
 
-REDIS_URL = os.environ.get('REDIS_URL')
+REDIS_URL = os.environ.get('REDIS_URL_REDIS_URL')
 
 r = None
 if REDIS_URL:
