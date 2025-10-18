@@ -2,3 +2,5 @@ flask
 requests
 flask-cors
 redis
+python-dotenv
+langdetect
