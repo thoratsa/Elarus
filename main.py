@@ -3,10 +3,20 @@ import json
 import requests
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+import redis
 import time
 
-CACHE_FILE = 'translation_cache.json'
+REDIS_URL = os.environ.get('REDIS_URL')
 
+r = None
+if REDIS_URL:
+    try:
+        r = redis.from_url(REDIS_URL, decode_responses=True)
+        r.ping()
+        print("Redis connection successful.")
+    except Exception as e:
+        print(f"Redis connection failed: {e}. Caching disabled.")
+        r = None
 
 app = Flask(__name__)
 CORS(app)
@@ -14,23 +24,7 @@ CORS(app)
 API_KEY = os.environ.get("GROQ_API_KEY", "")
 GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
 MODEL_NAME = "openai/gpt-oss-120b"
-
-
-def load_cache():
-    if not os.path.exists(CACHE_FILE):
-        return {}
-    try:
-        with open(CACHE_FILE, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    except (IOError, json.JSONDecodeError):
-        return {}
-
-def save_cache(cache_data):
-    try:
-        with open(CACHE_FILE, 'w', encoding='utf-8') as f:
-            json.dump(cache_data, f, indent=2, ensure_ascii=False)
-    except IOError as e:
-        print(f"ERROR: Could not save cache file. Persistence failed. {e}")
+CACHE_EXPIRY_SECONDS = 60 * 60 * 24 * 7 
 
 
 @app.route('/translate', methods=['POST'])
@@ -50,18 +44,22 @@ def translate():
         return jsonify({"error": f"Invalid JSON format: {str(e)}"}), 400
 
     
-    cache = load_cache()
-    cache_key = f"{text_to_translate}|{target_lang}"
+    cache_key = f"translation:{text_to_translate}|{target_lang}"
     
-    if cache_key in cache:
-        cached_result = cache[cache_key]
-        print("Cache HIT!")
-        return jsonify({
-            "source_language": cached_result['source_language'],
-            "target_language": target_lang,
-            "translated_text": cached_result['translated_text'],
-            "status": "cached"
-        })
+    if r:
+        try:
+            cached_result_json = r.get(cache_key)
+            if cached_result_json:
+                cached_result = json.loads(cached_result_json)
+                print("Cache HIT!")
+                return jsonify({
+                    "source_language": cached_result['source_language'],
+                    "target_language": target_lang,
+                    "translated_text": cached_result['translated_text'],
+                    "status": "cached"
+                })
+        except Exception as e:
+            print(f"Error reading from Redis: {e}")
 
     print("Cache MISS! Calling Groq...")
     system_prompt = f"You are a professional translator. Translate the user's text into {target_lang}. Only return the translated text. Do not include any explanations, greetings, or punctuation outside of the translation itself."
@@ -95,13 +93,18 @@ def translate():
             "status": "generated"
         }
         
-        cache[cache_key] = {
-            "source_language": "auto-detected",
-            "translated_text": translated_text,
-            "timestamp": time.time(),
-            "model": MODEL_NAME
-        }
-        save_cache(cache)
+        if r:
+            try:
+                cache_data = {
+                    "source_language": "auto-detected",
+                    "translated_text": translated_text,
+                    "timestamp": time.time(),
+                    "model": MODEL_NAME
+                }
+                r.set(cache_key, json.dumps(cache_data), ex=CACHE_EXPIRY_SECONDS)
+                print("Successfully saved result to Redis.")
+            except Exception as e:
+                print(f"Error writing to Redis: {e}")
         
         return jsonify(response_data)
 
