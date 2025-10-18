@@ -1,4 +1,4 @@
-# Elarus Translation API
+# Elarus
 
 Elarus provides high-performance, real-time translation services powered by Groq's LPU infrastructure. It offers a simple JSON API for AI-powered translations with smart caching and rate limiting.
 
