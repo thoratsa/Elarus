@@ -1,7 +1,7 @@
 import os
 import json
 import requests
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import redis
 import time
@@ -309,8 +309,15 @@ def retranslate():
 
 @app.route('/')
 def index():
-    with open('index.html', 'r') as f:
-        return f.read()
+    return send_from_directory('.', 'index.html')
+
+@app.route('/style.css')
+def serve_css():
+    return send_from_directory('.', 'style.css')
+
+@app.route('/script.js')
+def serve_js():
+    return send_from_directory('.', 'script.js')
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
