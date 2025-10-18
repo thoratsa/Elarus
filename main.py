@@ -13,9 +13,7 @@ if REDIS_URL:
     try:
         r = redis.from_url(REDIS_URL, decode_responses=True)
         r.ping()
-        print("Redis connection successful.")
     except Exception as e:
-        print(f"Redis connection failed: {e}. Caching disabled.")
         r = None
 
 app = Flask(__name__)
@@ -25,10 +23,35 @@ API_KEY = os.environ.get("GROQ_API_KEY", "")
 GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
 MODEL_NAME = "openai/gpt-oss-120b"
 CACHE_EXPIRY_SECONDS = 60 * 60 * 24 * 7 
+RATE_LIMIT_SECONDS = 1 
 
+
+def check_rate_limit(client_id):
+    if not r:
+        return True
+    
+    current_time = time.time()
+    key = f"rate_limit:{client_id}"
+    
+    try:
+        last_request_time = r.get(key)
+        if last_request_time:
+            time_since_last = current_time - float(last_request_time)
+            if time_since_last < RATE_LIMIT_SECONDS:
+                return False
+        
+        r.set(key, current_time, ex=RATE_LIMIT_SECONDS * 2)
+        return True
+    except Exception as e:
+        return True
 
 @app.route('/translate', methods=['POST'])
 def translate():
+    client_ip = request.headers.get('X-Forwarded-For', request.remote_addr).split(',')[0].strip()
+    
+    if not check_rate_limit(client_ip):
+        return jsonify({"error": f"Rate limit exceeded. Try again in {RATE_LIMIT_SECONDS} second(s)."}), 429
+
     if not API_KEY:
         return jsonify({"error": "API key not configured."}), 500
 
@@ -42,7 +65,6 @@ def translate():
 
     except Exception as e:
         return jsonify({"error": f"Invalid JSON format: {str(e)}"}), 400
-
     
     cache_key = f"translation:{text_to_translate}|{target_lang}"
     
@@ -51,7 +73,6 @@ def translate():
             cached_result_json = r.get(cache_key)
             if cached_result_json:
                 cached_result = json.loads(cached_result_json)
-                print("Cache HIT!")
                 return jsonify({
                     "source_language": cached_result['source_language'],
                     "target_language": target_lang,
@@ -59,10 +80,13 @@ def translate():
                     "status": "cached"
                 })
         except Exception as e:
-            print(f"Error reading from Redis: {e}")
+            pass
 
-    print("Cache MISS! Calling Groq...")
-    system_prompt = f"You are a professional translator. Translate the user's text into {target_lang}. Only return the translated text. Do not include any explanations, greetings, or punctuation outside of the translation itself."
+    system_prompt = f"""You are a professional translator and language identifier. 
+Translate the user's text into {target_lang}. 
+Identify the language of the user's original text.
+Respond ONLY with a single valid JSON object formatted as follows, without any markdown, explanations, or extraneous text:
+{{"source_language": "[Detected Language]", "translated_text": "[The Translation]"}}"""
     
     headers = {
         "Authorization": f"Bearer {API_KEY}",
@@ -75,7 +99,7 @@ def translate():
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": text_to_translate}
         ],
-        "temperature": 0.3,
+        "temperature": 0.1,
         "max_tokens": 1024
     }
     
@@ -84,10 +108,19 @@ def translate():
         groq_response.raise_for_status()
         groq_data = groq_response.json()
 
-        translated_text = groq_data['choices'][0]['message']['content'].strip()
+        raw_content = groq_data['choices'][0]['message']['content'].strip()
+        
+        try:
+            parsed_data = json.loads(raw_content)
+        except json.JSONDecodeError:
+            return jsonify({"error": "Failed to parse structured response from LLM."}), 500
 
+
+        translated_text = parsed_data.get('translated_text')
+        source_language = parsed_data.get('source_language')
+        
         response_data = {
-            "source_language": "auto-detected",
+            "source_language": source_language,
             "target_language": target_lang,
             "translated_text": translated_text,
             "status": "generated"
@@ -96,15 +129,14 @@ def translate():
         if r:
             try:
                 cache_data = {
-                    "source_language": "auto-detected",
+                    "source_language": source_language,
                     "translated_text": translated_text,
                     "timestamp": time.time(),
                     "model": MODEL_NAME
                 }
                 r.set(cache_key, json.dumps(cache_data), ex=CACHE_EXPIRY_SECONDS)
-                print("Successfully saved result to Redis.")
             except Exception as e:
-                print(f"Error writing to Redis: {e}")
+                pass
         
         return jsonify(response_data)
 
