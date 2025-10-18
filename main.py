@@ -38,7 +38,7 @@ def translate():
         "model": MODEL_NAME,
         "messages": [
             {"role": "system", "content": system_prompt},
-            {"role": "user", "content": text_to_translate}
+            {"role": "user": "content": text_to_translate}
         ],
         "temperature": 0.3,
         "max_tokens": 1024
