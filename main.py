@@ -10,7 +10,7 @@ from langdetect.lang_detect_exception import LangDetectException
 
 DetectorFactory.seed = 0
 
-REDIS_URL = os.environ.get('REDIS_URL_REDIS_URL')
+REDIS_URL = os.environ.get('REDIS_URL')
 
 r = None
 if REDIS_URL:
@@ -80,8 +80,19 @@ def _process_translation(text_to_translate, target_lang, client_ip, force_refres
     
     status_type = "reviewed" if force_refresh else "generated"
 
-    system_prompt = f"You are a professional translator. Translate the user's text into {target_lang}. Only return the translated text. Do not include any explanations, greetings, or punctuation outside of the translation itself."
-    
+    # --- Prompt and Response Logic for LLM ---
+
+    if force_refresh:
+        # Use JSON output for forced review to ensure reliable parsing
+        system_prompt = f"""You are a professional translator. Translate the user's text into {target_lang}. 
+        Respond ONLY with a single JSON object containing the key 'translated_text' and the translation as its value."""
+        response_format = {"type": "json_object"}
+    else:
+        # Use raw output for speed on standard requests
+        system_prompt = f"You are a professional translator. Translate the user's text into {target_lang}. Only return the translated text. Do not include any explanations, greetings, or punctuation outside of the translation itself."
+        response_format = None
+
+
     headers = {
         "Authorization": f"Bearer {API_KEY}",
         "Content-Type": "application/json"
@@ -96,13 +107,32 @@ def _process_translation(text_to_translate, target_lang, client_ip, force_refres
         "temperature": 0.1,
         "max_tokens": max_tokens_calculated
     }
+
+    if response_format:
+        payload["response_format"] = response_format
     
     try:
         groq_response = requests.post(GROQ_API_URL, headers=headers, data=json.dumps(payload))
         groq_response.raise_for_status()
         groq_data = groq_response.json()
 
-        translated_text = groq_data['choices'][0]['message']['content'].strip()
+        raw_content = groq_data['choices'][0]['message']['content'].strip()
+
+        if force_refresh:
+            # Parse the strict JSON output
+            try:
+                parsed_data = json.loads(raw_content)
+                translated_text = parsed_data.get('translated_text', '').strip()
+            except json.JSONDecodeError:
+                return jsonify({"error": "LLM failed to return valid JSON during review."}), 500
+        else:
+            # Use raw string output for standard generation
+            translated_text = raw_content
+
+        if not translated_text:
+            return jsonify({"error": "LLM returned empty or unparseable translation text."}), 500
+
+        # --- Cache Update and Final Response ---
         
         response_data = {
             "source_language": source_language_code,
