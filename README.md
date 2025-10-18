@@ -1,4 +1,5 @@
 [![license](https://img.shields.io/github/license/iamtraction/google-translate.svg)](LICENSE)
+![Python Badge](https://img.shields.io/badge/Made%20with-Python-blue)
 # Elarus
 
 Elarus provides high-performance, real-time translation services powered by Groq's LPU infrastructure. It offers a simple JSON API for AI-powered translations with smart caching and rate limiting.
