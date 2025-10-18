@@ -1,0 +1,29 @@
+# Environments
+.env
+.flaskenv
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / deployment
+.eggs/
+*.egg-info/
+dist/
+build/
+
+# Debug / temporary files
+.coverage
+.cache
+.pytest_cache/
+*.log
+*.tmp
+*.bak
+
+# Vercel / Deployment specific files
+.vercel/
+
+# Operating System Files
+.DS_Store
+Thumbs.db
