@@ -5,6 +5,10 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import redis
 import time
+from langdetect import detect, DetectorFactory
+from langdetect.lang_detect_exception import LangDetectException
+
+DetectorFactory.seed = 0
 
 REDIS_URL = os.environ.get('REDIS_URL_REDIS_URL')
 
@@ -45,6 +49,12 @@ def check_rate_limit(client_id):
     except Exception as e:
         return True
 
+def get_source_language(text):
+    try:
+        return detect(text).upper()
+    except LangDetectException:
+        return "Unknown"
+
 @app.route('/translate', methods=['POST'])
 def translate():
     client_ip = request.headers.get('X-Forwarded-For', request.remote_addr).split(',')[0].strip()
@@ -66,6 +76,8 @@ def translate():
     except Exception as e:
         return jsonify({"error": f"Invalid JSON format: {str(e)}"}), 400
     
+    source_language_code = get_source_language(text_to_translate)
+
     cache_key = f"translation:{text_to_translate}|{target_lang}"
     
     if r:
@@ -81,12 +93,10 @@ def translate():
                 })
         except Exception as e:
             pass
-
-    system_prompt = f"""You are a professional translator and language identifier. 
-Translate the user's text into {target_lang}. 
-Identify the language of the user's original text.
-Respond ONLY with a single valid JSON object formatted as follows, without any markdown, explanations, or extraneous text:
-{{"source_language": "[Detected Language]", "translated_text": "[The Translation]"}}"""
+    
+    max_tokens_calculated = min(2000, len(text_to_translate) * 2 + 50) 
+    
+    system_prompt = f"You are a professional translator. Translate the user's text into {target_lang}. Only return the translated text. Do not include any explanations, greetings, or punctuation outside of the translation itself."
     
     headers = {
         "Authorization": f"Bearer {API_KEY}",
@@ -100,7 +110,7 @@ Respond ONLY with a single valid JSON object formatted as follows, without any m
             {"role": "user", "content": text_to_translate}
         ],
         "temperature": 0.1,
-        "max_tokens": 1024
+        "max_tokens": max_tokens_calculated
     }
     
     try:
@@ -108,19 +118,10 @@ Respond ONLY with a single valid JSON object formatted as follows, without any m
         groq_response.raise_for_status()
         groq_data = groq_response.json()
 
-        raw_content = groq_data['choices'][0]['message']['content'].strip()
-        
-        try:
-            parsed_data = json.loads(raw_content)
-        except json.JSONDecodeError:
-            return jsonify({"error": "Failed to parse structured response from LLM."}), 500
-
-
-        translated_text = parsed_data.get('translated_text')
-        source_language = parsed_data.get('source_language')
+        translated_text = groq_data['choices'][0]['message']['content'].strip()
         
         response_data = {
-            "source_language": source_language,
+            "source_language": source_language_code,
             "target_language": target_lang,
             "translated_text": translated_text,
             "status": "generated"
@@ -129,7 +130,7 @@ Respond ONLY with a single valid JSON object formatted as follows, without any m
         if r:
             try:
                 cache_data = {
-                    "source_language": source_language,
+                    "source_language": source_language_code,
                     "translated_text": translated_text,
                     "timestamp": time.time(),
                     "model": MODEL_NAME
