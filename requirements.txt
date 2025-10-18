@@ -1,6 +1,5 @@
-flask
-requests
-flask-cors
-redis
-python-dotenv
-langdetect
+flask==2.3.3
+flask-cors==4.0.0
+redis==5.0.1
+requests==2.31.0
+langdetect==1.0.9
