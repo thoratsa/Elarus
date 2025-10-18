@@ -30,7 +30,7 @@ if REDIS_URL:
     except Exception:
         r = None
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='public')
 CORS(app)
 
 class TranslationError(Exception):
@@ -308,16 +308,12 @@ def retranslate():
     return jsonify(result), 200
 
 @app.route('/')
-def index():
-    return send_from_directory('.', 'index.html')
+def serve_index():
+    return send_from_directory('public', 'index.html')
 
-@app.route('/style.css')
-def serve_css():
-    return send_from_directory('.', 'style.css')
-
-@app.route('/script.js')
-def serve_js():
-    return send_from_directory('.', 'script.js')
+@app.route('/<path:path>')
+def serve_static(path):
+    return send_from_directory('public', path)
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
