@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Translation API Playground</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>Translation API Playground</h1>
+            <p>Test the translation API in real-time with this interactive playground</p>
+        </header>
+        
+        <main class="content">
+            <div class="form-group">
+                <label for="text">Text to Translate (Max 2000 characters):</label>
+                <textarea id="text" placeholder="Enter text to translate..." maxlength="2000">Hello! How are you today? This is a test of the translation API.</textarea>
+                <div class="char-counter">
+                    <span id="charCount">0</span>/2000 characters
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="targetLang">Target Language:</label>
+                <input type="text" id="targetLang" placeholder="e.g., Spanish, French, German, Japanese..." value="Spanish">
+            </div>
+            
+            <div class="button-group">
+                <button class="btn btn-primary" onclick="translateText()" id="translateBtn">
+                    Translate
+                </button>
+                <button class="btn btn-secondary" onclick="retranslateText()" id="retranslateBtn">
+                    Retranslate (Force Refresh)
+                </button>
+            </div>
+            
+            <div id="result"></div>
+            
+            <div class="api-info">
+                <h3>API Endpoints:</h3>
+                <p><strong>POST</strong> <code>/api/translate</code> - Standard translation with caching</p>
+                <p><strong>POST</strong> <code>/api/retranslate</code> - Force fresh translation (bypass cache)</p>
+                <p><strong>GET</strong> <code>/api/health</code> - Health check and system status</p>
+                <p><strong>Base URL:</strong> <code>https://elarus.vercel.app</code></p>
+            </div>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
