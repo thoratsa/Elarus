@@ -2,173 +2,238 @@
 
 Elarus provides high-performance, real-time translation services powered by Groq's LPU infrastructure. It offers a simple JSON API for AI-powered translations with smart caching and rate limiting.
 
-## API endpoints
-
-The service provides three main endpoints for translations and system status.
-
-**Live Playground**: [https://elarus.vercel.app](https://elarus.vercel.app)
-
-### Translate
-```http
-POST /api/translate
-```
-Standard translation with intelligent caching.
-
-### Retranslate
-```http
-POST /api/retranslate
-```
-Force fresh translation, bypassing cache.
-
-### Health Check
-```http
-GET /api/health
-```
-Check API status and configuration.
-
 ## Quick Start
 
-### Using the API
+The API is available at `https://elarus.vercel.app` with three main endpoints:
 
-Translate text from English to Spanish:
+| Endpoint | Method | Description |
+|----------|---------|-------------|
+| `/api/translate` | POST | Standard translation with intelligent caching |
+| `/api/retranslate` | POST | Force fresh translation (bypass cache) |
+| `/api/health` | GET | System status and health check |
 
-```bash
-curl -X POST https://elarus.vercel.app/api/translate \
-  -H "Content-Type: application/json" \
-  -d '{"text": "Hello, how are you today?", "target_lang": "Spanish"}'
-```
-
-Response:
+### Request Format
+All translation endpoints accept JSON with:
 ```json
 {
-  "source_language": "EN",
-  "target_language": "Spanish",
-  "translated_text": "Hola, ¿cómo estás hoy?",
-  "status": "generated"
+  "text": "Text to translate",
+  "target_lang": "Target language"
 }
 ```
 
-### Force Fresh Translation
-
-Get a new translation, bypassing cache:
-
-```bash
-curl -X POST https://elarus.vercel.app/api/retranslate \
-  -H "Content-Type: application/json" \
-  -d '{"text": "Hello, how are you today?", "target_lang": "French"}'
-```
-
-### Check Service Status
-
-```bash
-curl https://elarus.vercel.app/api/health
-```
-
-## Features
-
-- **AI-Powered Translations**: Powered by Groq's GPT-OSS-120B model
-- **Smart Caching**: Redis-based caching for improved performance
-- **Rate Limiting**: 1 request per second per IP address
-- **Auto Language Detection**: Automatically detects source language
-- **Modern Dark UI**: Full-screen playground with dark theme
-- **JSON API**: Clean, consistent JSON responses
-
-## Usage Examples
-
-### Python
-
-```python
-import requests
-
-def translate_text(text, target_lang):
-    response = requests.post(
-        'https://elarus.vercel.app/api/translate',
-        json={'text': text, 'target_lang': target_lang}
-    )
-    return response.json()
-
-# Usage
-result = translate_text('Good morning', 'Japanese')
-print(f"Translation: {result['translated_text']}")
-```
-
-### JavaScript
-
-```javascript
-async function translateText(text, targetLang) {
-  const response = await fetch('https://elarus.vercel.app/api/translate', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ text, target_lang: targetLang })
-  });
-  return await response.json();
-}
-
-// Usage
-translateText('Thank you', 'German')
-  .then(result => console.log(result.translated_text));
-```
-
-## Supported Languages
-
-Elarus supports all languages available in Groq's GPT-OSS-120B model, including but not limited to:
-
-- English, Spanish, French, German, Italian, Portuguese
-- Chinese, Japanese, Korean, Arabic, Russian
-- And 100+ other languages
-
-## Response Format
-
-### Success Response
+### Response Format
+Successful responses return:
 ```json
 {
   "source_language": "EN",
-  "target_language": "Spanish",
+  "target_language": "Spanish", 
   "translated_text": "Texto traducido",
   "status": "cached"
 }
 ```
 
-### Error Response
-```json
-{
-  "error": "Rate limit exceeded",
-  "details": "Try again in 1 second(s)",
-  "status_code": 429
+## Usage Examples
+
+### Bash (curl)
+```bash
+# Basic translation
+curl -X POST https://elarus.vercel.app/api/translate \
+  -H "Content-Type: application/json" \
+  -d '{"text": "Hello world", "target_lang": "Spanish"}'
+
+# Force fresh translation
+curl -X POST https://elarus.vercel.app/api/retranslate \
+  -H "Content-Type: application/json" \
+  -d '{"text": "Hello world", "target_lang": "French"}'
+
+# Health check
+curl https://elarus.vercel.app/api/health
+```
+
+### Python
+```python
+import requests
+
+def translate_text(text, target_lang, force_refresh=False):
+    endpoint = "/api/retranslate" if force_refresh else "/api/translate"
+    response = requests.post(
+        f"https://elarus.vercel.app{endpoint}",
+        json={"text": text, "target_lang": target_lang}
+    )
+    return response.json()
+
+# Usage examples
+result = translate_text("Good morning", "Japanese")
+print(f"Translation: {result['translated_text']}")
+
+# Force fresh translation
+fresh_result = translate_text("Thank you", "German", force_refresh=True)
+print(f"Status: {fresh_result['status']}")
+```
+
+### JavaScript
+```javascript
+class ElarusClient {
+  constructor(baseUrl = 'https://elarus.vercel.app') {
+    this.baseUrl = baseUrl;
+  }
+
+  async translate(text, targetLang, forceRefresh = false) {
+    const endpoint = forceRefresh ? '/api/retranslate' : '/api/translate';
+    const response = await fetch(`${this.baseUrl}${endpoint}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, target_lang: targetLang })
+    });
+    return await response.json();
+  }
+
+  async health() {
+    const response = await fetch(`${this.baseUrl}/api/health`);
+    return await response.json();
+  }
+}
+
+// Usage
+const client = new ElarusClient();
+client.translate('Hello world', 'Spanish')
+  .then(result => console.log(result.translated_text));
+```
+
+### Java
+```java
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import com.google.gson.Gson;
+
+public class ElarusClient {
+    private static final String BASE_URL = "https://elarus.vercel.app";
+    private final HttpClient client = HttpClient.newHttpClient();
+    private final Gson gson = new Gson();
+
+    public TranslationResult translate(String text, String targetLang, boolean forceRefresh) throws Exception {
+        String endpoint = forceRefresh ? "/api/retranslate" : "/api/translate";
+        String json = gson.toJson(new TranslationRequest(text, targetLang));
+        
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(BASE_URL + endpoint))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(json))
+                .build();
+                
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        return gson.fromJson(response.body(), TranslationResult.class);
+    }
+    
+    // Helper classes
+    static class TranslationRequest {
+        String text;
+        String target_lang;
+        TranslationRequest(String text, String targetLang) {
+            this.text = text;
+            this.target_lang = targetLang;
+        }
+    }
+    
+    static class TranslationResult {
+        String source_language;
+        String target_language;
+        String translated_text;
+        String status;
+    }
 }
 ```
 
-## Rate Limits
+### Go
+```go
+package main
 
-- **1 request per second** per IP address
-- Automatic rate limiting with Redis
-- 429 status code when limit exceeded
+import (
+    "bytes"
+    "encoding/json"
+    "fmt"
+    "net/http"
+)
 
-## Text Limits
+type TranslationRequest struct {
+    Text      string `json:"text"`
+    TargetLang string `json:"target_lang"`
+}
 
-- Maximum text length: **2000 characters**
-- Input validation for text and language format
+type TranslationResult struct {
+    SourceLanguage string `json:"source_language"`
+    TargetLanguage string `json:"target_language"`
+    TranslatedText string `json:"translated_text"`
+    Status         string `json:"status"`
+}
 
-## Deployment
+func Translate(text, targetLang string, forceRefresh bool) (*TranslationResult, error) {
+    endpoint := "/api/translate"
+    if forceRefresh {
+        endpoint = "/api/retranslate"
+    }
+    
+    reqBody := TranslationRequest{Text: text, TargetLang: targetLang}
+    jsonData, _ := json.Marshal(reqBody)
+    
+    resp, err := http.Post("https://elarus.vercel.app"+endpoint, "application/json", bytes.NewBuffer(jsonData))
+    if err != nil {
+        return nil, err
+    }
+    defer resp.Body.Close()
+    
+    var result TranslationResult
+    err = json.NewDecoder(resp.Body).Decode(&result)
+    return &result, err
+}
 
-The API is deployed on Vercel with serverless architecture. Key files:
+// Usage
+func main() {
+    result, err := Translate("Hello world", "Spanish", false)
+    if err != nil {
+        panic(err)
+    }
+    fmt.Printf("Translation: %s\n", result.TranslatedText)
+}
+```
 
-- `app.py` - Main Flask application
-- `index.html` - Playground interface
-- `style.css` - Dark theme styling
-- `script.js` - Frontend functionality
+## Features
 
-## Support
+- **AI-Powered**: Uses Groq's GPT-OSS-120B model for high-quality translations
+- **Smart Caching**: Redis-based caching reduces latency for repeated translations
+- **Auto Language Detection**: Automatically identifies source language
+- **Rate Limiting**: 1 request per second per IP to ensure fair usage
+- **JSON API**: Consistent RESTful API with detailed error responses
+- **Multi-language Support**: 100+ languages including English, Spanish, French, German, Chinese, Japanese, Arabic, and more
 
-For issues and questions:
-1. Test with the [playground](https://elarus.vercel.app)
-2. Check the health endpoint for service status
-3. Ensure you're within rate limits
+## Rate Limits & Limits
+
+- **Rate Limit**: 1 request per second per IP address
+- **Text Length**: Maximum 2000 characters per request
+- **Response Time**: Typically < 2 seconds for translations
+
+## Error Handling
+
+All errors return consistent JSON format:
+```json
+{
+  "error": "Error description",
+  "details": "Additional context", 
+  "status_code": 400
+}
+```
+
+Common error codes:
+- `400` - Invalid request (missing fields, invalid format)
+- `429` - Rate limit exceeded
+- `500` - Internal server error
+
+## Live Playground
+
+Test the API with our interactive playground: [https://elarus.vercel.app](https://elarus.vercel.app)
 
 ## License
 
-This project is licensed under the MIT License, check [LICENSE](LICENSE) for more information.
-
----
-
-**Elarus** - Fast, reliable AI translation API.
+This project is licensed under the **MIT License**, read [LICENSE](LICENSE).
