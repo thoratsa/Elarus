@@ -55,32 +55,14 @@ def get_source_language(text):
     except LangDetectException:
         return "Unknown"
 
-@app.route('/translate', methods=['POST'])
-def translate():
-    client_ip = request.headers.get('X-Forwarded-For', request.remote_addr).split(',')[0].strip()
-    
+def _process_translation(text_to_translate, target_lang, client_ip, force_refresh=False):
     if not check_rate_limit(client_ip):
         return jsonify({"error": f"Rate limit exceeded. Try again in {RATE_LIMIT_SECONDS} second(s)."}), 429
 
-    if not API_KEY:
-        return jsonify({"error": "API key not configured."}), 500
-
-    try:
-        data = request.get_json()
-        text_to_translate = data.get('text', '').strip()
-        target_lang = data.get('target_lang', '').strip()
-        
-        if not text_to_translate or not target_lang:
-            return jsonify({"error": "Missing 'text' or 'target_lang' in request body."}), 400
-
-    except Exception as e:
-        return jsonify({"error": f"Invalid JSON format: {str(e)}"}), 400
-    
     source_language_code = get_source_language(text_to_translate)
-
     cache_key = f"translation:{text_to_translate}|{target_lang}"
-    
-    if r:
+
+    if not force_refresh and r:
         try:
             cached_result_json = r.get(cache_key)
             if cached_result_json:
@@ -90,12 +72,14 @@ def translate():
                     "target_language": target_lang,
                     "translated_text": cached_result['translated_text'],
                     "status": "cached"
-                })
+                }), 200
         except Exception as e:
             pass
     
     max_tokens_calculated = min(2000, len(text_to_translate) * 2 + 50) 
     
+    status_type = "reviewed" if force_refresh else "generated"
+
     system_prompt = f"You are a professional translator. Translate the user's text into {target_lang}. Only return the translated text. Do not include any explanations, greetings, or punctuation outside of the translation itself."
     
     headers = {
@@ -124,7 +108,7 @@ def translate():
             "source_language": source_language_code,
             "target_language": target_lang,
             "translated_text": translated_text,
-            "status": "generated"
+            "status": status_type
         }
         
         if r:
@@ -139,7 +123,7 @@ def translate():
             except Exception as e:
                 pass
         
-        return jsonify(response_data)
+        return jsonify(response_data), 200
 
     except requests.exceptions.HTTPError as e:
         status_code = e.response.status_code
@@ -148,3 +132,43 @@ def translate():
 
     except Exception as e:
         return jsonify({"error": f"An unexpected error occurred during translation: {str(e)}"}), 500
+
+@app.route('/translate', methods=['POST'])
+def translate():
+    client_ip = request.headers.get('X-Forwarded-For', request.remote_addr).split(',')[0].strip()
+    
+    if not API_KEY:
+        return jsonify({"error": "API key not configured."}), 500
+
+    try:
+        data = request.get_json()
+        text_to_translate = data.get('text', '').strip()
+        target_lang = data.get('target_lang', '').strip()
+        
+        if not text_to_translate or not target_lang:
+            return jsonify({"error": "Missing 'text' or 'target_lang' in request body."}), 400
+
+    except Exception as e:
+        return jsonify({"error": f"Invalid JSON format: {str(e)}"}), 400
+    
+    return _process_translation(text_to_translate, target_lang, client_ip, force_refresh=False)
+
+@app.route('/review', methods=['POST'])
+def review():
+    client_ip = request.headers.get('X-Forwarded-For', request.remote_addr).split(',')[0].strip()
+    
+    if not API_KEY:
+        return jsonify({"error": "API key not configured."}), 500
+
+    try:
+        data = request.get_json()
+        text_to_translate = data.get('text', '').strip()
+        target_lang = data.get('target_lang', '').strip()
+        
+        if not text_to_translate or not target_lang:
+            return jsonify({"error": "Missing 'text' or 'target_lang' in request body."}), 400
+
+    except Exception as e:
+        return jsonify({"error": f"Invalid JSON format: {str(e)}"}), 400
+    
+    return _process_translation(text_to_translate, target_lang, client_ip, force_refresh=True)
