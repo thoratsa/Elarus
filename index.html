@@ -10,47 +10,39 @@
     <div class="container">
         <header class="header">
             <h1>Elarus</h1>
-            <div class="subtitle">Translation API Playground</div>
-            <div class="tagline">High-performance translation microservice powered by AI</div>
+            <div class="tagline">High-performance translation API</div>
         </header>
         
         <main class="content">
-            <div class="content-grid">
-                <div class="input-section">
-                    <div class="form-group">
-                        <label for="text">Text to Translate (Max 2000 characters):</label>
-                        <textarea id="text" placeholder="Enter text to translate..." maxlength="2000">Hello! How are you today? This is a test of the Elarus translation API.</textarea>
-                        <div class="char-counter">
-                            <span id="charCount">0</span>/2000 characters
-                        </div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="targetLang">Target Language:</label>
-                        <input type="text" id="targetLang" placeholder="e.g., Spanish, French, German, Japanese..." value="Spanish">
-                    </div>
-                    
-                    <div class="button-group">
-                        <button class="btn btn-primary" onclick="translateText()" id="translateBtn">
-                            Translate
-                        </button>
-                        <button class="btn btn-secondary" onclick="retranslateText()" id="retranslateBtn">
-                            Retranslate
-                        </button>
-                    </div>
+            <div class="form-group">
+                <label for="text">Text to translate:</label>
+                <textarea id="text" placeholder="Enter text..." maxlength="2000">Hello! How are you today?</textarea>
+                <div class="char-counter">
+                    <span id="charCount">0</span>/2000
                 </div>
-                
-                <div class="output-section">
-                    <div id="result"></div>
-                </div>
-                
-                <div class="api-info">
-                    <h3>Elarus API Endpoints</h3>
-                    <p><strong>POST</strong> <code>/api/translate</code> - Standard translation with intelligent caching</p>
-                    <p><strong>POST</strong> <code>/api/retranslate</code> - Force fresh translation (bypass cache)</p>
-                    <p><strong>GET</strong> <code>/api/health</code> - System status and health check</p>
-                    <p><strong>Base URL:</strong> <code>https://elarus.vercel.app</code></p>
-                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="targetLang">Target language:</label>
+                <input type="text" id="targetLang" placeholder="Spanish, French, German..." value="Spanish">
+            </div>
+            
+            <div class="button-group">
+                <button class="btn btn-primary" onclick="translateText()" id="translateBtn">
+                    Translate
+                </button>
+                <button class="btn btn-secondary" onclick="retranslateText()" id="retranslateBtn">
+                    Retranslate
+                </button>
+            </div>
+            
+            <div id="result"></div>
+            
+            <div class="api-info">
+                <h3>API Endpoints</h3>
+                <p><code>POST /api/translate</code> - Cached translation</p>
+                <p><code>POST /api/retranslate</code> - Fresh translation</p>
+                <p><code>GET /api/health</code> - System status</p>
             </div>
         </main>
     </div>
