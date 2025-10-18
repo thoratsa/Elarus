@@ -6,8 +6,8 @@
 
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-    background: #0f0f0f;
-    color: #e0e0e0;
+    background: #0a0a0a;
+    color: #e8e8e8;
     line-height: 1.6;
     min-height: 100vh;
 }
@@ -16,36 +16,41 @@ body {
     min-height: 100vh;
     display: flex;
     flex-direction: column;
-    background: #1a1a1a;
+    background: #111;
 }
 
 .header {
-    background: #000;
+    background: linear-gradient(135deg, #1a1a1a 0%, #000 100%);
     color: white;
-    padding: 2rem;
+    padding: 3rem 2rem;
     text-align: center;
-    border-bottom: 1px solid #333;
+    border-bottom: 1px solid #222;
 }
 
 .header h1 {
-    font-size: 2.5rem;
+    font-size: 3rem;
     margin-bottom: 0.5rem;
-    font-weight: 600;
-    background: linear-gradient(135deg, #667eea, #764ba2);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: -0.5px;
 }
 
-.header p {
-    opacity: 0.8;
-    font-size: 1.1rem;
+.header .subtitle {
+    font-size: 1.3rem;
+    opacity: 0.7;
     font-weight: 300;
+}
+
+.header .tagline {
+    margin-top: 0.5rem;
+    opacity: 0.6;
+    font-size: 1rem;
 }
 
 .content {
     flex: 1;
     padding: 2rem;
-    max-width: 1200px;
+    max-width: 1400px;
     margin: 0 auto;
     width: 100%;
 }
@@ -56,41 +61,41 @@ body {
 
 label {
     display: block;
-    margin-bottom: 0.5rem;
-    font-weight: 500;
+    margin-bottom: 0.75rem;
+    font-weight: 600;
     color: #ccc;
-    font-size: 0.9rem;
+    font-size: 1rem;
 }
 
 textarea, input {
     width: 100%;
-    padding: 1rem;
+    padding: 1.25rem;
     border: 1px solid #333;
-    border-radius: 8px;
-    font-size: 1rem;
+    border-radius: 12px;
+    font-size: 1.1rem;
     font-family: inherit;
-    background: #2d2d2d;
-    color: #e0e0e0;
-    transition: all 0.2s ease;
+    background: #1a1a1a;
+    color: #fff;
+    transition: all 0.3s ease;
 }
 
 textarea:focus, input:focus {
     outline: none;
-    border-color: #667eea;
-    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 textarea {
-    height: 140px;
+    height: 160px;
     resize: vertical;
-    line-height: 1.5;
+    line-height: 1.6;
 }
 
 .char-counter {
     text-align: right;
-    font-size: 0.8rem;
-    color: #888;
-    margin-top: 0.25rem;
+    font-size: 0.9rem;
+    color: #666;
+    margin-top: 0.5rem;
 }
 
 .button-group {
@@ -101,183 +106,200 @@ textarea {
 
 .btn {
     flex: 1;
-    padding: 1rem 1.5rem;
+    padding: 1.25rem 2rem;
     border: none;
-    border-radius: 8px;
-    font-size: 1rem;
-    font-weight: 500;
+    border-radius: 12px;
+    font-size: 1.1rem;
+    font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.3s ease;
     font-family: inherit;
 }
 
 .btn-primary {
-    background: #667eea;
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
     color: white;
 }
 
 .btn-primary:hover:not(:disabled) {
-    background: #5a6fd8;
-    transform: translateY(-1px);
+    background: linear-gradient(135deg, #2563eb, #1e40af);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
 }
 
 .btn-secondary {
-    background: #555;
+    background: linear-gradient(135deg, #6b7280, #4b5563);
     color: white;
 }
 
 .btn-secondary:hover:not(:disabled) {
-    background: #666;
-    transform: translateY(-1px);
+    background: linear-gradient(135deg, #4b5563, #374151);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(107, 114, 128, 0.3);
 }
 
 .btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
     transform: none;
+    box-shadow: none;
 }
 
 .result {
-    background: #2d2d2d;
-    border-radius: 8px;
-    padding: 1.5rem;
-    margin-top: 1rem;
+    background: #1a1a1a;
+    border-radius: 12px;
+    padding: 2rem;
     border: 1px solid #333;
     font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-    font-size: 0.9rem;
+    font-size: 0.95rem;
+    height: 100%;
 }
 
 .result h3 {
     color: #fff;
-    margin-bottom: 1rem;
-    font-size: 1.1rem;
+    margin-bottom: 1.5rem;
+    font-size: 1.2rem;
+    font-weight: 600;
 }
 
 .result-content {
     white-space: pre-wrap;
-    line-height: 1.5;
-    color: #e0e0e0;
+    line-height: 1.6;
+    color: #e8e8e8;
 }
 
 .status {
     display: inline-block;
-    padding: 0.25rem 0.75rem;
-    border-radius: 12px;
-    font-size: 0.75rem;
-    font-weight: 600;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 700;
     margin-bottom: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .status-cached {
-    background: #1e3a28;
-    color: #4ade80;
-    border: 1px solid #2d4a3a;
+    background: #065f46;
+    color: #10b981;
+    border: 1px solid #047857;
 }
 
 .status-generated {
-    background: #1e3a5f;
+    background: #1e3a8a;
     color: #60a5fa;
-    border: 1px solid #2d4a7a;
+    border: 1px solid #3730a3;
 }
 
 .status-regenerated {
-    background: #5c4a1e;
-    color: #fbbf24;
-    border: 1px solid #7a5a2d;
+    background: #7c2d12;
+    color: #f59e0b;
+    border: 1px solid #9a3412;
 }
 
 .error {
-    background: #3a1e1e;
-    border-color: #7a2d2d;
+    background: #7f1d1d;
+    border-color: #991b1b;
 }
 
 .loading {
     text-align: center;
-    padding: 2rem;
-    color: #888;
+    padding: 3rem;
+    color: #666;
     font-style: italic;
+    font-size: 1.1rem;
 }
 
 .api-info {
-    background: #2d2d2d;
-    border-radius: 8px;
-    padding: 1.5rem;
-    margin-top: 2rem;
+    background: #1a1a1a;
+    border-radius: 12px;
+    padding: 2rem;
     border: 1px solid #333;
 }
 
 .api-info h3 {
     color: #fff;
-    margin-bottom: 1rem;
-    font-size: 1.1rem;
+    margin-bottom: 1.5rem;
+    font-size: 1.3rem;
+    font-weight: 600;
 }
 
 .api-info p {
-    margin-bottom: 0.5rem;
-    font-size: 0.9rem;
+    margin-bottom: 0.75rem;
+    font-size: 1rem;
     color: #ccc;
+    line-height: 1.5;
 }
 
 .api-info code {
     background: #000;
-    color: #667eea;
-    padding: 0.2rem 0.5rem;
-    border-radius: 4px;
+    color: #3b82f6;
+    padding: 0.3rem 0.6rem;
+    border-radius: 6px;
     font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-    font-size: 0.8rem;
-}
-
-.json-key {
-    color: #f78c6c;
+    font-size: 0.9rem;
     font-weight: 600;
 }
 
+.json-key {
+    color: #f97316;
+    font-weight: 700;
+}
+
 .json-string {
-    color: #89ddff;
+    color: #22d3ee;
 }
 
 .json-number {
-    color: #f78c6c;
+    color: #f97316;
 }
 
 .json-boolean {
-    color: #c792ea;
+    color: #c084fc;
 }
 
-/* Grid layout for better use of space */
-@media (min-width: 768px) {
-    .content-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 2rem;
-        align-items: start;
-    }
-    
-    .input-section {
-        grid-column: 1;
-    }
-    
-    .output-section {
-        grid-column: 2;
-    }
-    
-    .api-info {
-        grid-column: 1 / -1;
-    }
+/* Grid layout */
+.content-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2.5rem;
+    align-items: start;
+    height: 100%;
+}
+
+.input-section {
+    display: flex;
+    flex-direction: column;
+}
+
+.output-section {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.api-info {
+    grid-column: 1 / -1;
+    margin-top: 1rem;
 }
 
 /* Full width on mobile */
-@media (max-width: 767px) {
+@media (max-width: 1023px) {
+    .content-grid {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+    }
+    
     .content {
-        padding: 1rem;
+        padding: 1.5rem;
     }
     
     .header {
-        padding: 1.5rem 1rem;
+        padding: 2rem 1.5rem;
     }
     
     .header h1 {
-        font-size: 2rem;
+        font-size: 2.5rem;
     }
     
     .button-group {
@@ -305,4 +327,18 @@ textarea {
 
 ::-webkit-scrollbar-thumb:hover {
     background: #444;
+}
+
+/* Selection color */
+::selection {
+    background: #3b82f6;
+    color: white;
+}
+
+/* Focus styles for accessibility */
+button:focus-visible,
+textarea:focus-visible,
+input:focus-visible {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
 }
