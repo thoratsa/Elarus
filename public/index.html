@@ -149,6 +149,41 @@
             background: var(--bg-accent);
         }
 
+        .github-link {
+            position: absolute;
+            top: 20px;
+            right: 70px;
+        }
+
+        .github-btn {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 8px 16px;
+            font-size: 0.9rem;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: var(--shadow);
+            transition: all 0.2s;
+        }
+
+        .github-btn:hover {
+            background: var(--bg-accent);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-hover);
+            text-decoration: none;
+            color: var(--text-primary);
+        }
+
+        .github-icon {
+            width: 16px;
+            height: 16px;
+            fill: currentColor;
+        }
+
         .content-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -159,6 +194,16 @@
         @media (max-width: 768px) {
             .content-grid {
                 grid-template-columns: 1fr;
+            }
+            
+            .github-link {
+                position: static;
+                text-align: center;
+                margin-top: 15px;
+            }
+            
+            .github-btn {
+                display: inline-flex;
             }
         }
 
@@ -400,6 +445,50 @@
             color: var(--text-primary);
         }
 
+        .api-usage {
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            border-left: 4px solid var(--accent-primary);
+        }
+
+        .api-usage h4 {
+            margin-top: 0;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .api-usage-icon {
+            width: 18px;
+            height: 18px;
+            fill: var(--accent-primary);
+        }
+
+        .api-usage ul {
+            margin: 10px 0;
+            padding-left: 20px;
+            color: var(--text-secondary);
+        }
+
+        .api-usage li {
+            margin-bottom: 8px;
+        }
+
+        .code-block {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 15px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            overflow-x: auto;
+        }
+
         .hidden {
             display: none;
         }
@@ -413,6 +502,15 @@
                     <option value="en">English</option>
                     <option value="ru">Русский</option>
                 </select>
+            </div>
+            
+            <div class="github-link">
+                <a href="https://github.com/thoratsa/elarus" class="github-btn" target="_blank">
+                    <svg class="github-icon" viewBox="0 0 16 16">
+                        <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+                    </svg>
+                    GitHub
+                </a>
             </div>
             
             <h1 id="appName">Elarus</h1>
@@ -468,6 +566,39 @@
                     <p><strong>POST</strong> <code>/api/retranslate</code> - <span id="endpoint2">Force fresh translation (bypass cache)</span></p>
                     <p><strong>GET</strong> <code>/api/health</code> - <span id="endpoint3">System status and health check</span></p>
                     <p><strong id="baseUrlLabel">Base URL:</strong> <code>https://elarus.vercel.app</code></p>
+                    
+                    <div class="api-usage">
+                        <h4>
+                            <svg class="api-usage-icon" viewBox="0 0 24 24">
+                                <path d="M14,2A8,8 0 0,0 6,10A8,8 0 0,0 14,18A8,8 0 0,0 22,10H20C20,13.32 17.32,16 14,16A6,6 0 0,1 8,10A6,6 0 0,1 14,4C14.43,4 14.86,4.05 15.27,4.14L16.88,2.54C15.96,2.18 15,2 14,2M20.59,3.58L14,10.17L11.62,7.79L10.21,9.21L14,13L22,5M4.93,5.82C3.08,7.34 2,9.61 2,12A8,8 0 0,0 10,20C10.64,20 11.27,19.92 11.88,19.77C10.12,19.38 8.5,18.5 7.17,17.29C5.22,16.25 4,14.21 4,12C4,11.7 4.03,11.41 4.07,11.11C4.03,10.74 4,10.37 4,10C4,8.56 4.32,7.13 4.93,5.82Z" />
+                            </svg>
+                            <span id="apiUsageTitle">Use Elarus in Your Applications</span>
+                        </h4>
+                        <p id="apiUsageDesc">Elarus is a production-ready API that you can integrate into your applications, websites, and services.</p>
+                        
+                        <div class="code-block">
+// JavaScript Example<br>
+const response = await fetch('https://elarus.vercel.app/api/translate', {<br>
+&nbsp;&nbsp;method: 'POST',<br>
+&nbsp;&nbsp;headers: { 'Content-Type': 'application/json' },<br>
+&nbsp;&nbsp;body: JSON.stringify({<br>
+&nbsp;&nbsp;&nbsp;&nbsp;text: 'Hello world!',<br>
+&nbsp;&nbsp;&nbsp;&nbsp;target_lang: 'Spanish'<br>
+&nbsp;&nbsp;})<br>
+});<br>
+const data = await response.json();
+                        </div>
+                        
+                        <ul>
+                            <li id="usage1"><strong>Web Applications:</strong> Add real-time translation to your web apps</li>
+                            <li id="usage2"><strong>Mobile Apps:</strong> Integrate translation features in iOS/Android apps</li>
+                            <li id="usage3"><strong>Chatbots:</strong> Enable multilingual conversations</li>
+                            <li id="usage4"><strong>Content Management:</strong> Automate translation of user-generated content</li>
+                            <li id="usage5"><strong>Developer Tools:</strong> Build translation plugins and extensions</li>
+                        </ul>
+                        
+                        <p id="githubLinkText">Check out the <a href="https://github.com/thoratsa/elarus" style="color: var(--accent-primary);">GitHub repository</a> for full documentation, examples, and source code.</p>
+                    </div>
                 </div>
             </div>
         </main>
@@ -505,7 +636,15 @@
                 translatedText: "Translated Text",
                 sourceLanguage: "Source Language",
                 targetLanguage: "Target Language",
-                translationStatus: "Translation Status"
+                translationStatus: "Translation Status",
+                apiUsageTitle: "Use Elarus in Your Applications",
+                apiUsageDesc: "Elarus is a production-ready API that you can integrate into your applications, websites, and services.",
+                usage1: "Web Applications: Add real-time translation to your web apps",
+                usage2: "Mobile Apps: Integrate translation features in iOS/Android apps",
+                usage3: "Chatbots: Enable multilingual conversations",
+                usage4: "Content Management: Automate translation of user-generated content",
+                usage5: "Developer Tools: Build translation plugins and extensions",
+                githubLinkText: "Check out the GitHub repository for full documentation, examples, and source code."
             },
             ru: {
                 appName: "Эларус",
@@ -536,7 +675,15 @@
                 translatedText: "Переведенный текст",
                 sourceLanguage: "Исходный язык",
                 targetLanguage: "Целевой язык",
-                translationStatus: "Статус перевода"
+                translationStatus: "Статус перевода",
+                apiUsageTitle: "Используйте Elarus в ваших приложениях",
+                apiUsageDesc: "Elarus — это готовый к продакшену API, который можно интегрировать в приложения, веб-сайты и сервисы.",
+                usage1: "Веб-приложения: Добавьте перевод в реальном времени",
+                usage2: "Мобильные приложения: Интегрируйте функции перевода в iOS/Android приложения",
+                usage3: "Чат-боты: Включите многоязычные беседы",
+                usage4: "Управление контентом: Автоматизируйте перевод пользовательского контента",
+                usage5: "Инструменты разработчика: Создавайте плагины и расширения для перевода",
+                githubLinkText: "Ознакомьтесь с репозиторием GitHub для полной документации, примеров и исходного кода."
             }
         };
 
@@ -616,6 +763,14 @@
             document.getElementById('endpoint3').textContent = t.endpoint3;
             document.getElementById('baseUrlLabel').textContent = t.baseUrlLabel;
             loadingText.textContent = t.waiting;
+            document.getElementById('apiUsageTitle').textContent = t.apiUsageTitle;
+            document.getElementById('apiUsageDesc').textContent = t.apiUsageDesc;
+            document.getElementById('usage1').textContent = t.usage1;
+            document.getElementById('usage2').textContent = t.usage2;
+            document.getElementById('usage3').textContent = t.usage3;
+            document.getElementById('usage4').textContent = t.usage4;
+            document.getElementById('usage5').textContent = t.usage5;
+            document.getElementById('githubLinkText').innerHTML = t.githubLinkText.replace('GitHub repository', `<a href="https://github.com/thoratsa/elarus" style="color: var(--accent-primary);">${currentLanguage === 'ru' ? 'репозиторий GitHub' : 'GitHub repository'}</a>`);
             
             // Update placeholders
             document.getElementById('text').placeholder = t.placeholderText;
