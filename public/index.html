@@ -4,39 +4,48 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Elarus - Translation API</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌐</text></svg>">
     <style>
         :root {
-            --bg-primary: #ffffff;
-            --bg-secondary: #f5f7fa;
-            --bg-tertiary: #e6e9ef;
-            --text-primary: #1a1a1a;
-            --text-secondary: #4a5568;
-            --accent-primary: #4361ee;
-            --accent-secondary: #3a0ca3;
-            --border-color: #cbd5e0;
-            --shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+            --bg-primary: #f8fafc;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #f1f5f9;
+            --bg-accent: #e2e8f0;
+            --text-primary: #1e293b;
+            --text-secondary: #475569;
+            --text-muted: #64748b;
+            --accent-primary: #3b82f6;
+            --accent-secondary: #1d4ed8;
+            --border-color: #cbd5e1;
+            --border-light: #e2e8f0;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.1);
+            --shadow-hover: 0 10px 15px rgba(0, 0, 0, 0.1), 0 4px 6px rgba(0, 0, 0, 0.05);
             --success: #10b981;
             --warning: #f59e0b;
             --error: #ef4444;
         }
 
         [data-theme="dark"] {
-            --bg-primary: #121212;
-            --bg-secondary: #1e1e1e;
-            --bg-tertiary: #2d2d2d;
-            --text-primary: #f8fafc;
-            --text-secondary: #cbd5e0;
-            --accent-primary: #4cc9f0;
-            --accent-secondary: #4361ee;
-            --border-color: #4a5568;
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
+            --bg-accent: #475569;
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --text-muted: #94a3b8;
+            --accent-primary: #60a5fa;
+            --accent-secondary: #3b82f6;
+            --border-color: #475569;
+            --border-light: #334155;
             --shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            --shadow-hover: 0 10px 15px rgba(0, 0, 0, 0.4);
             --success: #10b981;
             --warning: #f59e0b;
             --error: #ef4444;
         }
 
         * {
-            transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+            transition: background-color 0.3s, color 0.3s, border-color 0.3s, box-shadow 0.3s;
         }
 
         body {
@@ -58,9 +67,12 @@
         .header {
             text-align: center;
             margin-bottom: 40px;
-            padding: 20px;
-            border-bottom: 1px solid var(--border-color);
+            padding: 30px 20px;
+            border-bottom: 1px solid var(--border-light);
             position: relative;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            box-shadow: var(--shadow);
         }
 
         .header h1 {
@@ -81,7 +93,7 @@
 
         .tagline {
             font-size: 1rem;
-            color: var(--text-secondary);
+            color: var(--text-muted);
             max-width: 600px;
             margin: 0 auto;
         }
@@ -90,20 +102,29 @@
             position: absolute;
             top: 20px;
             right: 20px;
-            background: var(--bg-secondary);
+            background: var(--bg-tertiary);
             border: 1px solid var(--border-color);
-            border-radius: 50px;
-            padding: 8px 15px;
+            border-radius: 8px;
+            padding: 8px;
             cursor: pointer;
             display: flex;
             align-items: center;
-            gap: 8px;
-            font-size: 0.9rem;
-            color: var(--text-primary);
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            box-shadow: var(--shadow);
         }
 
         .theme-toggle:hover {
-            background: var(--bg-tertiary);
+            background: var(--bg-accent);
+            box-shadow: var(--shadow-hover);
+            transform: translateY(-2px);
+        }
+
+        .theme-icon {
+            width: 20px;
+            height: 20px;
+            fill: var(--text-secondary);
         }
 
         .language-selector {
@@ -113,12 +134,17 @@
         }
 
         .language-selector select {
-            background: var(--bg-secondary);
+            background: var(--bg-tertiary);
             color: var(--text-primary);
             border: 1px solid var(--border-color);
-            border-radius: 4px;
+            border-radius: 6px;
             padding: 8px 12px;
             font-size: 0.9rem;
+            box-shadow: var(--shadow);
+        }
+
+        .language-selector select:hover {
+            background: var(--bg-accent);
         }
 
         .content-grid {
@@ -136,9 +162,10 @@
 
         .input-section, .output-section {
             background: var(--bg-secondary);
-            border-radius: 10px;
+            border-radius: 12px;
             padding: 25px;
             box-shadow: var(--shadow);
+            border: 1px solid var(--border-light);
         }
 
         .form-group {
@@ -156,11 +183,18 @@
             width: 100%;
             padding: 12px;
             border: 1px solid var(--border-color);
-            border-radius: 6px;
-            background: var(--bg-primary);
+            border-radius: 8px;
+            background: var(--bg-tertiary);
             color: var(--text-primary);
             font-size: 1rem;
             box-sizing: border-box;
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        textarea:focus, input:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
         }
 
         textarea {
@@ -171,7 +205,7 @@
         .char-counter {
             text-align: right;
             font-size: 0.85rem;
-            color: var(--text-secondary);
+            color: var(--text-muted);
             margin-top: 5px;
         }
 
@@ -184,12 +218,13 @@
         .btn {
             padding: 12px 24px;
             border: none;
-            border-radius: 6px;
+            border-radius: 8px;
             font-size: 1rem;
             font-weight: 600;
             cursor: pointer;
             flex: 1;
             transition: all 0.2s;
+            box-shadow: var(--shadow);
         }
 
         .btn-primary {
@@ -200,6 +235,7 @@
         .btn-primary:hover {
             background: var(--accent-secondary);
             transform: translateY(-2px);
+            box-shadow: var(--shadow-hover);
         }
 
         .btn-secondary {
@@ -209,23 +245,26 @@
         }
 
         .btn-secondary:hover {
-            background: var(--border-color);
+            background: var(--bg-accent);
             transform: translateY(-2px);
+            box-shadow: var(--shadow-hover);
         }
 
         .btn:disabled {
             opacity: 0.6;
             cursor: not-allowed;
             transform: none;
+            box-shadow: var(--shadow);
         }
 
         #result {
             min-height: 200px;
             padding: 15px;
-            border-radius: 6px;
-            background: var(--bg-primary);
+            border-radius: 8px;
+            background: var(--bg-tertiary);
             border: 1px solid var(--border-color);
             white-space: pre-wrap;
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
         }
 
         .result-success {
@@ -240,11 +279,11 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            color: var(--text-secondary);
+            color: var(--text-muted);
         }
 
         .spinner {
-            border: 3px solid var(--bg-tertiary);
+            border: 3px solid var(--bg-accent);
             border-top: 3px solid var(--accent-primary);
             border-radius: 50%;
             width: 20px;
@@ -261,9 +300,10 @@
         .api-info {
             grid-column: 1 / -1;
             background: var(--bg-secondary);
-            border-radius: 10px;
+            border-radius: 12px;
             padding: 25px;
             box-shadow: var(--shadow);
+            border: 1px solid var(--border-light);
         }
 
         .api-info h3 {
@@ -327,9 +367,10 @@
             <div class="subtitle" id="subtitle">Translation API Playground</div>
             <div class="tagline" id="tagline">High-performance translation microservice powered by AI</div>
             
-            <div class="theme-toggle" id="themeToggle">
-                <span id="themeIcon">🌙</span>
-                <span id="themeText">Dark Mode</span>
+            <div class="theme-toggle" id="themeToggle" title="Toggle theme">
+                <svg class="theme-icon" viewBox="0 0 24 24" id="themeIcon">
+                    <path d="M12,18C11.11,18 10.26,17.8 9.5,17.45C11.56,16.5 13,14.42 13,12C13,9.58 11.56,7.5 9.5,6.55C10.26,6.2 11.11,6 12,6A6,6 0 0,1 18,12A6,6 0 0,1 12,18M20,8.69V4H15.31L12,0.69L8.69,4H4V8.69L0.69,12L4,15.31V20H8.69L12,23.31L15.31,20H20V15.31L23.31,12L20,8.69Z" />
+                </svg>
             </div>
         </header>
         
@@ -391,7 +432,7 @@
                 endpoint2: "Force fresh translation (bypass cache)",
                 endpoint3: "System status and health check",
                 baseUrlLabel: "Base URL:",
-                themeText: "Dark Mode",
+                themeText: "Toggle theme",
                 placeholderText: "Enter text to translate...",
                 placeholderLang: "e.g., Spanish, French, German, Japanese...",
                 loading: "Translating...",
@@ -415,7 +456,7 @@
                 endpoint2: "Принудительный новый перевод (обход кэша)",
                 endpoint3: "Проверка состояния системы",
                 baseUrlLabel: "Базовый URL:",
-                themeText: "Тёмная тема",
+                themeText: "Переключить тему",
                 placeholderText: "Введите текст для перевода...",
                 placeholderLang: "например, Испанский, Французский, Немецкий, Японский...",
                 loading: "Перевод...",
@@ -432,7 +473,6 @@
 
         const themeToggle = document.getElementById('themeToggle');
         const themeIcon = document.getElementById('themeIcon');
-        const themeText = document.getElementById('themeText');
         const languageSelect = document.getElementById('languageSelect');
         const charCount = document.getElementById('charCount');
         const textArea = document.getElementById('text');
@@ -460,13 +500,13 @@
         }
 
         function updateThemeUI() {
-            if (currentTheme === 'dark') {
-                themeIcon.textContent = '☀️';
-                themeText.textContent = translations[currentLanguage].themeText;
-            } else {
-                themeIcon.textContent = '🌙';
-                themeText.textContent = translations[currentLanguage].themeText;
-            }
+            const themeIconPaths = {
+                light: "M12,18C11.11,18 10.26,17.8 9.5,17.45C11.56,16.5 13,14.42 13,12C13,9.58 11.56,7.5 9.5,6.55C10.26,6.2 11.11,6 12,6A6,6 0 0,1 18,12A6,6 0 0,1 12,18M20,8.69V4H15.31L12,0.69L8.69,4H4V8.69L0.69,12L4,15.31V20H8.69L12,23.31L15.31,20H20V15.31L23.31,12L20,8.69Z",
+                dark: "M12,18A6,6 0 0,1 6,12C6,11 6.25,10.03 6.7,9.2L5.24,7.74C4.46,8.97 4,10.43 4,12A8,8 0 0,0 12,20C13.57,20 15.03,19.54 16.26,18.76L14.8,17.3C13.97,17.75 13,18 12,18M20,8.69V4H15.31L12,0.69L8.69,4H4V8.69L0.69,12L4,15.31V20H8.69L12,23.31L15.31,20H20V15.31L23.31,12L20,8.69Z"
+            };
+            
+            themeIcon.setAttribute('d', currentTheme === 'dark' ? themeIconPaths.dark : themeIconPaths.light);
+            themeToggle.setAttribute('title', translations[currentLanguage].themeText);
         }
 
         function changeLanguage() {
@@ -506,7 +546,7 @@
             } else if (count > 1500) {
                 charCount.style.color = 'var(--warning)';
             } else {
-                charCount.style.color = 'var(--text-secondary)';
+                charCount.style.color = 'var(--text-muted)';
             }
         }
 
@@ -574,6 +614,7 @@
                 resultDiv.className = 'result-error';
             }
         }
+
         document.addEventListener('DOMContentLoaded', initializeUI);
     </script>
 </body>
