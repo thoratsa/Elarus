@@ -6,13 +6,13 @@ Elarus provides high-performance, real-time translation services powered by Groq
 
 ## Quick Start
 
-The API is available at `https://elarus.vercel.app` with three main endpoints:
+The API is available at `https://elarus.vercel.app/api` with three main endpoints:
 
 | Endpoint | Method | Description |
 |----------|---------|-------------|
-| `/api/translate` | POST | Standard translation with intelligent caching |
-| `/api/retranslate` | POST | Force fresh translation (bypass cache) |
-| `/api/health` | GET | System status and health check |
+| `/translate` | POST | Standard translation with intelligent caching |
+| `/retranslate` | POST | Force fresh translation (bypass cache) |
+| `/health` | GET | System status and health check |
 
 ### Request Format
 All translation endpoints accept JSON with:
