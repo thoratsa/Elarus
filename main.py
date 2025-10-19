@@ -341,9 +341,13 @@ def retranslate():
 def serve_index():
     return send_from_directory(app.static_folder, 'index.html')
 
-@app.route('/<path:filename>')
-def serve_static(filename):
-    return send_from_directory(app.static_folder, filename)
+@app.route('/style.css')
+def serve_css():
+    return send_from_directory(app.static_folder, 'style.css')
+
+@app.route('/script.js')
+def serve_js():
+    return send_from_directory(app.static_folder, 'script.js')
 
 if __name__ == '__main__':
     print(f"Starting Elarus Translation API (Groq model: {GROQ_MODEL})")
