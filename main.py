@@ -309,7 +309,9 @@ def retranslate():
 
 @app.route('/<path:path>')
 def serve_static(path):
-    return send_from_directory('public', path)
+    if os.path.exists(os.path.join('public', path)):
+        return send_from_directory('public', path)
+    abort(404)
 
 @app.route('/')
 def serve_index():
