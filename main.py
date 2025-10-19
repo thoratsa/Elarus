@@ -340,36 +340,49 @@ def retranslate():
 @app.route('/')
 def serve_index():
     try:
-        with open('public/index.html', 'r') as f:
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        file_path = os.path.join(base_dir, 'public', 'index.html')
+        print(f"Looking for index.html at: {file_path}")
+        with open(file_path, 'r') as f:
             return f.read()
     except FileNotFoundError:
         return jsonify({
             "error": "Playground not available",
-            "details": "index.html file not found",
+            "details": f"index.html file not found at {file_path}",
+            "status_code": 500
+        }), 500
+    except Exception as e:
+        return jsonify({
+            "error": "Error loading playground",
+            "details": str(e),
             "status_code": 500
         }), 500
 
 @app.route('/style.css')
 def serve_css():
     try:
-        with open('public/style.css', 'r') as f:
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        file_path = os.path.join(base_dir, 'public', 'style.css')
+        with open(file_path, 'r') as f:
             return f.read(), 200, {'Content-Type': 'text/css'}
     except FileNotFoundError:
         return jsonify({
             "error": "CSS file not found",
-            "details": "style.css file not found",
+            "details": f"style.css file not found at {file_path}",
             "status_code": 500
         }), 500
 
 @app.route('/script.js')
 def serve_js():
     try:
-        with open('public/script.js', 'r') as f:
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        file_path = os.path.join(base_dir, 'public', 'script.js')
+        with open(file_path, 'r') as f:
             return f.read(), 200, {'Content-Type': 'application/javascript'}
     except FileNotFoundError:
         return jsonify({
             "error": "JavaScript file not found",
-            "details": "script.js file not found",
+            "details": f"script.js file not found at {file_path}",
             "status_code": 500
         }), 500
 
@@ -377,4 +390,11 @@ if __name__ == '__main__':
     print(f"Starting Elarus Translation API (Groq model: {GROQ_MODEL})")
     print(f"Playground available at: http://localhost:5000")
     print(f"API endpoints available at: /api/translate, /api/retranslate, /api/health")
+    
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    public_dir = os.path.join(base_dir, 'public')
+    print(f"Current directory: {base_dir}")
+    print(f"Public directory: {public_dir}")
+    print(f"Files in public directory: {os.listdir(public_dir) if os.path.exists(public_dir) else 'Directory not found'}")
+    
     app.run(debug=True, host='0.0.0.0', port=5000)
