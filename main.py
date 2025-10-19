@@ -1,7 +1,7 @@
 import os
 import json
 import requests
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import redis
 import time
@@ -35,7 +35,7 @@ if REDIS_URL:
 else:
     print("Redis URL not provided, caching disabled")
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='public')
 CORS(app)
 
 class TranslationError(Exception):
@@ -339,62 +339,14 @@ def retranslate():
 
 @app.route('/')
 def serve_index():
-    try:
-        base_dir = os.path.dirname(os.path.abspath(__file__))
-        file_path = os.path.join(base_dir, 'public', 'index.html')
-        print(f"Looking for index.html at: {file_path}")
-        with open(file_path, 'r') as f:
-            return f.read()
-    except FileNotFoundError:
-        return jsonify({
-            "error": "Playground not available",
-            "details": f"index.html file not found at {file_path}",
-            "status_code": 500
-        }), 500
-    except Exception as e:
-        return jsonify({
-            "error": "Error loading playground",
-            "details": str(e),
-            "status_code": 500
-        }), 500
+    return send_from_directory(app.static_folder, 'index.html')
 
-@app.route('/style.css')
-def serve_css():
-    try:
-        base_dir = os.path.dirname(os.path.abspath(__file__))
-        file_path = os.path.join(base_dir, 'public', 'style.css')
-        with open(file_path, 'r') as f:
-            return f.read(), 200, {'Content-Type': 'text/css'}
-    except FileNotFoundError:
-        return jsonify({
-            "error": "CSS file not found",
-            "details": f"style.css file not found at {file_path}",
-            "status_code": 500
-        }), 500
-
-@app.route('/script.js')
-def serve_js():
-    try:
-        base_dir = os.path.dirname(os.path.abspath(__file__))
-        file_path = os.path.join(base_dir, 'public', 'script.js')
-        with open(file_path, 'r') as f:
-            return f.read(), 200, {'Content-Type': 'application/javascript'}
-    except FileNotFoundError:
-        return jsonify({
-            "error": "JavaScript file not found",
-            "details": f"script.js file not found at {file_path}",
-            "status_code": 500
-        }), 500
+@app.route('/<path:filename>')
+def serve_static(filename):
+    return send_from_directory(app.static_folder, filename)
 
 if __name__ == '__main__':
     print(f"Starting Elarus Translation API (Groq model: {GROQ_MODEL})")
     print(f"Playground available at: http://localhost:5000")
     print(f"API endpoints available at: /api/translate, /api/retranslate, /api/health")
-    
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    public_dir = os.path.join(base_dir, 'public')
-    print(f"Current directory: {base_dir}")
-    print(f"Public directory: {public_dir}")
-    print(f"Files in public directory: {os.listdir(public_dir) if os.path.exists(public_dir) else 'Directory not found'}")
-    
     app.run(debug=True, host='0.0.0.0', port=5000)
