@@ -12,14 +12,14 @@ from functools import wraps
 
 DetectorFactory.seed = 0
 
-REDIS_URL = os.environ.get('REDIS_URL_REDIS_URL')
-GROQ_MODEL = os.environ.get("GROQ_MODEL")
-API_KEY = os.environ.get("GROQ_API_KEY") 
+REDIS_URL = os.environ.get('REDIS_URL')
+GROQ_MODEL = "openai/gpt-oss-120b"
+API_KEY = os.environ.get("GROQ_API_KEY", "") 
 API_URL = "https://api.groq.com/openai/v1/chat/completions"
 CACHE_EXPIRY_SECONDS = 60 * 60 * 24 * 7 
 RATE_LIMIT_SECONDS = 1
 MAX_RETRIES = 5
-BASE_DELAY = 0
+BASE_DELAY = 1
 MAX_TEXT_LENGTH = 2000
 
 r = None
@@ -62,7 +62,8 @@ def validate_input(f):
             
             text = data.get('text', '').strip()
             target_lang = data.get('target_lang', '').strip()
-            
+            source_lang = data.get('source_lang', '').strip()
+
             if len(text) > MAX_TEXT_LENGTH:
                 raise InputValidationError(
                     f"Text too long. Maximum {MAX_TEXT_LENGTH} characters.",
@@ -78,6 +79,12 @@ def validate_input(f):
             if not re.match(r'^[A-Za-z\s\-]+$', target_lang):
                 raise InputValidationError(
                     "Invalid target language format",
+                    "Use only letters, spaces, and hyphens"
+                )
+            
+            if source_lang and not re.match(r'^[A-Za-z\s\-]+$', source_lang):
+                raise InputValidationError(
+                    "Invalid source language format",
                     "Use only letters, spaces, and hyphens"
                 )
                 
@@ -171,14 +178,14 @@ def call_groq_api_with_backoff(system_instruction, user_prompt):
 
     raise Exception("Translation failed after maximum retries.")
 
-def _process_translation(text_to_translate, target_lang, client_ip, force_refresh=False):
+def _process_translation(text_to_translate, target_lang, client_ip, force_refresh=False, source_lang_override=None):
     if not check_rate_limit(client_ip):
         raise RateLimitError(
             f"Rate limit exceeded. Try again in {RATE_LIMIT_SECONDS} second(s).",
             f"Client IP: {client_ip}"
         )
 
-    source_language_code = get_source_language(text_to_translate)
+    source_language_code = source_lang_override.upper() if source_lang_override else get_source_language(text_to_translate)
     cache_key = f"translation:{text_to_translate}|{target_lang}"
     status_type = "regenerated" if force_refresh else "generated"
 
@@ -288,8 +295,9 @@ def translate():
     data = request.get_json()
     text_to_translate = data.get('text', '').strip()
     target_lang = data.get('target_lang', '').strip()
-    
-    result = _process_translation(text_to_translate, target_lang, client_ip, force_refresh=False)
+    source_lang = data.get('source_lang', '').strip()
+
+    result = _process_translation(text_to_translate, target_lang, client_ip, force_refresh=False, source_lang_override=source_lang or None)
     return jsonify(result), 200
 
 @app.route('/api/retranslate', methods=['POST'])
@@ -303,8 +311,9 @@ def retranslate():
     data = request.get_json()
     text_to_translate = data.get('text', '').strip()
     target_lang = data.get('target_lang', '').strip()
-    
-    result = _process_translation(text_to_translate, target_lang, client_ip, force_refresh=True)
+    source_lang = data.get('source_lang', '').strip()
+
+    result = _process_translation(text_to_translate, target_lang, client_ip, force_refresh=True, source_lang_override=source_lang or None)
     return jsonify(result), 200
 
 @app.route('/<path:path>')
