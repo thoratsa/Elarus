@@ -4,38 +4,35 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Elarus - Translation API</title>
-    <link rel="stylesheet" href="/style.css">
     <style>
         :root {
-            /* Light theme variables */
             --bg-primary: #ffffff;
-            --bg-secondary: #f8f9fa;
-            --bg-tertiary: #e9ecef;
-            --text-primary: #212529;
-            --text-secondary: #6c757d;
+            --bg-secondary: #f5f7fa;
+            --bg-tertiary: #e6e9ef;
+            --text-primary: #1a1a1a;
+            --text-secondary: #4a5568;
             --accent-primary: #4361ee;
             --accent-secondary: #3a0ca3;
-            --border-color: #dee2e6;
-            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            --success: #28a745;
-            --warning: #ffc107;
-            --error: #dc3545;
+            --border-color: #cbd5e0;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
         }
 
         [data-theme="dark"] {
-            /* Dark theme variables */
             --bg-primary: #121212;
             --bg-secondary: #1e1e1e;
             --bg-tertiary: #2d2d2d;
-            --text-primary: #e9ecef;
-            --text-secondary: #adb5bd;
+            --text-primary: #f8fafc;
+            --text-secondary: #cbd5e0;
             --accent-primary: #4cc9f0;
             --accent-secondary: #4361ee;
-            --border-color: #495057;
+            --border-color: #4a5568;
             --shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-            --success: #20c997;
-            --warning: #ffd166;
-            --error: #f72585;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
         }
 
         * {
@@ -102,6 +99,7 @@
             align-items: center;
             gap: 8px;
             font-size: 0.9rem;
+            color: var(--text-primary);
         }
 
         .theme-toggle:hover {
@@ -300,17 +298,17 @@
         }
 
         .status-cached {
-            background: rgba(40, 167, 69, 0.2);
+            background: rgba(16, 185, 129, 0.2);
             color: var(--success);
         }
 
         .status-generated {
-            background: rgba(255, 193, 7, 0.2);
+            background: rgba(245, 158, 11, 0.2);
             color: var(--warning);
         }
 
         .status-regenerated {
-            background: rgba(220, 53, 69, 0.2);
+            background: rgba(239, 68, 68, 0.2);
             color: var(--error);
         }
     </style>
@@ -325,7 +323,7 @@
                 </select>
             </div>
             
-            <h1>Elarus</h1>
+            <h1 id="appName">Elarus</h1>
             <div class="subtitle" id="subtitle">Translation API Playground</div>
             <div class="tagline" id="tagline">High-performance translation microservice powered by AI</div>
             
@@ -378,9 +376,9 @@
     </div>
 
     <script>
-        // Language translations
         const translations = {
             en: {
+                appName: "Elarus",
                 subtitle: "Translation API Playground",
                 tagline: "High-performance translation microservice powered by AI",
                 textLabel: "Text to Translate (Max 2000 characters):",
@@ -404,6 +402,7 @@
                 statusRegenerated: "regenerated"
             },
             ru: {
+                appName: "Эларус",
                 subtitle: "Песочница API перевода",
                 tagline: "Высокопроизводительный микросервис перевода на основе ИИ",
                 textLabel: "Текст для перевода (максимум 2000 символов):",
@@ -428,38 +427,31 @@
             }
         };
 
-        // Theme and language state
         let currentTheme = localStorage.getItem('theme') || 'light';
         let currentLanguage = localStorage.getItem('language') || 'en';
 
-        // DOM elements
         const themeToggle = document.getElementById('themeToggle');
         const themeIcon = document.getElementById('themeIcon');
         const themeText = document.getElementById('themeText');
         const languageSelect = document.getElementById('languageSelect');
         const charCount = document.getElementById('charCount');
         const textArea = document.getElementById('text');
+        const appName = document.getElementById('appName');
 
-        // Initialize theme and language
         function initializeUI() {
-            // Set theme
             document.body.setAttribute('data-theme', currentTheme);
             updateThemeUI();
             
-            // Set language
             languageSelect.value = currentLanguage;
             updateLanguageUI();
             
-            // Update character count
             updateCharCount();
             
-            // Add event listeners
             themeToggle.addEventListener('click', toggleTheme);
             languageSelect.addEventListener('change', changeLanguage);
             textArea.addEventListener('input', updateCharCount);
         }
 
-        // Theme functions
         function toggleTheme() {
             currentTheme = currentTheme === 'light' ? 'dark' : 'light';
             document.body.setAttribute('data-theme', currentTheme);
@@ -477,18 +469,17 @@
             }
         }
 
-        // Language functions
         function changeLanguage() {
             currentLanguage = languageSelect.value;
             localStorage.setItem('language', currentLanguage);
             updateLanguageUI();
-            updateThemeUI(); // Update theme text in new language
+            updateThemeUI();
         }
 
         function updateLanguageUI() {
             const t = translations[currentLanguage];
             
-            // Update all text elements
+            appName.textContent = t.appName;
             document.getElementById('subtitle').textContent = t.subtitle;
             document.getElementById('tagline').textContent = t.tagline;
             document.getElementById('textLabel').textContent = t.textLabel;
@@ -502,12 +493,10 @@
             document.getElementById('endpoint3').textContent = t.endpoint3;
             document.getElementById('baseUrlLabel').textContent = t.baseUrlLabel;
             
-            // Update placeholders
             document.getElementById('text').placeholder = t.placeholderText;
             document.getElementById('targetLang').placeholder = t.placeholderLang;
         }
 
-        // Character count update
         function updateCharCount() {
             const count = textArea.value.length;
             charCount.textContent = count;
@@ -521,7 +510,6 @@
             }
         }
 
-        // Translation functions
         async function translateText() {
             await performTranslation('/api/translate');
         }
@@ -546,7 +534,6 @@
                 return;
             }
             
-            // Show loading state
             resultDiv.innerHTML = `<div class="result-loading"><div class="spinner"></div>${t.loading}</div>`;
             resultDiv.className = '';
             
@@ -565,7 +552,6 @@
                 const data = await response.json();
                 
                 if (response.ok) {
-                    // Success
                     const statusClass = `status-${data.status}`;
                     const statusText = t[`status${data.status.charAt(0).toUpperCase() + data.status.slice(1)}`];
                     
@@ -579,7 +565,6 @@
                     `;
                     resultDiv.className = 'result-success';
                 } else {
-                    // Error
                     resultDiv.innerHTML = `<strong>${t.error}</strong> ${data.error || data.details || t.unknownError}`;
                     resultDiv.className = 'result-error';
                 }
@@ -589,8 +574,6 @@
                 resultDiv.className = 'result-error';
             }
         }
-
-        // Initialize the UI when the page loads
         document.addEventListener('DOMContentLoaded', initializeUI);
     </script>
 </body>
