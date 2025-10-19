@@ -5,20 +5,341 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Elarus - Translation API</title>
     <link rel="stylesheet" href="/style.css">
+    <style>
+        :root {
+            /* Light theme variables */
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8f9fa;
+            --bg-tertiary: #e9ecef;
+            --text-primary: #212529;
+            --text-secondary: #6c757d;
+            --accent-primary: #4361ee;
+            --accent-secondary: #3a0ca3;
+            --border-color: #dee2e6;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --success: #28a745;
+            --warning: #ffc107;
+            --error: #dc3545;
+        }
+
+        [data-theme="dark"] {
+            /* Dark theme variables */
+            --bg-primary: #121212;
+            --bg-secondary: #1e1e1e;
+            --bg-tertiary: #2d2d2d;
+            --text-primary: #e9ecef;
+            --text-secondary: #adb5bd;
+            --accent-primary: #4cc9f0;
+            --accent-secondary: #4361ee;
+            --border-color: #495057;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            --success: #20c997;
+            --warning: #ffd166;
+            --error: #f72585;
+        }
+
+        * {
+            transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 20px;
+            border-bottom: 1px solid var(--border-color);
+            position: relative;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            margin: 0;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            font-weight: 700;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            margin: 10px 0;
+        }
+
+        .tagline {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .theme-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 50px;
+            padding: 8px 15px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+        }
+
+        .theme-toggle:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .language-selector {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+        }
+
+        .language-selector select {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 8px 12px;
+            font-size: 0.9rem;
+        }
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        @media (max-width: 768px) {
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .input-section, .output-section {
+            background: var(--bg-secondary);
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: var(--shadow);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        textarea, input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .char-counter {
+            text-align: right;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-top: 5px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 25px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            flex: 1;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--accent-primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-secondary);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background: var(--border-color);
+            transform: translateY(-2px);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        #result {
+            min-height: 200px;
+            padding: 15px;
+            border-radius: 6px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            white-space: pre-wrap;
+        }
+
+        .result-success {
+            border-left: 4px solid var(--success);
+        }
+
+        .result-error {
+            border-left: 4px solid var(--error);
+        }
+
+        .result-loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+        }
+
+        .spinner {
+            border: 3px solid var(--bg-tertiary);
+            border-top: 3px solid var(--accent-primary);
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .api-info {
+            grid-column: 1 / -1;
+            background: var(--bg-secondary);
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: var(--shadow);
+        }
+
+        .api-info h3 {
+            margin-top: 0;
+            color: var(--text-primary);
+        }
+
+        .api-info p {
+            margin: 10px 0;
+            color: var(--text-secondary);
+        }
+
+        .api-info code {
+            background: var(--bg-tertiary);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+            color: var(--text-primary);
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+
+        .status-cached {
+            background: rgba(40, 167, 69, 0.2);
+            color: var(--success);
+        }
+
+        .status-generated {
+            background: rgba(255, 193, 7, 0.2);
+            color: var(--warning);
+        }
+
+        .status-regenerated {
+            background: rgba(220, 53, 69, 0.2);
+            color: var(--error);
+        }
+    </style>
 </head>
 <body>
     <div class="container">
         <header class="header">
+            <div class="language-selector">
+                <select id="languageSelect">
+                    <option value="en">English</option>
+                    <option value="ru">Русский</option>
+                </select>
+            </div>
+            
             <h1>Elarus</h1>
-            <div class="subtitle">Translation API Playground</div>
-            <div class="tagline">High-performance translation microservice powered by AI</div>
+            <div class="subtitle" id="subtitle">Translation API Playground</div>
+            <div class="tagline" id="tagline">High-performance translation microservice powered by AI</div>
+            
+            <div class="theme-toggle" id="themeToggle">
+                <span id="themeIcon">🌙</span>
+                <span id="themeText">Dark Mode</span>
+            </div>
         </header>
         
         <main class="content">
             <div class="content-grid">
                 <div class="input-section">
                     <div class="form-group">
-                        <label for="text">Text to Translate (Max 2000 characters):</label>
+                        <label for="text" id="textLabel">Text to Translate (Max 2000 characters):</label>
                         <textarea id="text" placeholder="Enter text to translate..." maxlength="2000">Hello! How are you today? This is a test of the Elarus translation API.</textarea>
                         <div class="char-counter">
                             <span id="charCount">0</span>/2000 characters
@@ -26,7 +347,7 @@
                     </div>
                     
                     <div class="form-group">
-                        <label for="targetLang">Target Language:</label>
+                        <label for="targetLang" id="targetLangLabel">Target Language:</label>
                         <input type="text" id="targetLang" placeholder="e.g., Spanish, French, German, Japanese..." value="Spanish">
                     </div>
                     
@@ -41,20 +362,236 @@
                 </div>
                 
                 <div class="output-section">
+                    <label id="resultLabel">Translation Result:</label>
                     <div id="result"></div>
                 </div>
                 
                 <div class="api-info">
-                    <h3>Elarus API Endpoints</h3>
-                    <p><strong>POST</strong> <code>/api/translate</code> - Standard translation with intelligent caching</p>
-                    <p><strong>POST</strong> <code>/api/retranslate</code> - Force fresh translation (bypass cache)</p>
-                    <p><strong>GET</strong> <code>/api/health</code> - System status and health check</p>
-                    <p><strong>Base URL:</strong> <code>https://elarus.vercel.app</code></p>
+                    <h3 id="apiInfoTitle">Elarus API Endpoints</h3>
+                    <p><strong>POST</strong> <code>/api/translate</code> - <span id="endpoint1">Standard translation with intelligent caching</span></p>
+                    <p><strong>POST</strong> <code>/api/retranslate</code> - <span id="endpoint2">Force fresh translation (bypass cache)</span></p>
+                    <p><strong>GET</strong> <code>/api/health</code> - <span id="endpoint3">System status and health check</span></p>
+                    <p><strong id="baseUrlLabel">Base URL:</strong> <code>https://elarus.vercel.app</code></p>
                 </div>
             </div>
         </main>
     </div>
 
-    <script src="/script.js"></script>
+    <script>
+        // Language translations
+        const translations = {
+            en: {
+                subtitle: "Translation API Playground",
+                tagline: "High-performance translation microservice powered by AI",
+                textLabel: "Text to Translate (Max 2000 characters):",
+                targetLangLabel: "Target Language:",
+                translateBtn: "Translate",
+                retranslateBtn: "Retranslate",
+                resultLabel: "Translation Result:",
+                apiInfoTitle: "Elarus API Endpoints",
+                endpoint1: "Standard translation with intelligent caching",
+                endpoint2: "Force fresh translation (bypass cache)",
+                endpoint3: "System status and health check",
+                baseUrlLabel: "Base URL:",
+                themeText: "Dark Mode",
+                placeholderText: "Enter text to translate...",
+                placeholderLang: "e.g., Spanish, French, German, Japanese...",
+                loading: "Translating...",
+                error: "Error: ",
+                unknownError: "An unknown error occurred",
+                statusCached: "cached",
+                statusGenerated: "generated",
+                statusRegenerated: "regenerated"
+            },
+            ru: {
+                subtitle: "Песочница API перевода",
+                tagline: "Высокопроизводительный микросервис перевода на основе ИИ",
+                textLabel: "Текст для перевода (максимум 2000 символов):",
+                targetLangLabel: "Целевой язык:",
+                translateBtn: "Перевести",
+                retranslateBtn: "Перевести заново",
+                resultLabel: "Результат перевода:",
+                apiInfoTitle: "Эндпоинты Elarus API",
+                endpoint1: "Стандартный перевод с интеллектуальным кэшированием",
+                endpoint2: "Принудительный новый перевод (обход кэша)",
+                endpoint3: "Проверка состояния системы",
+                baseUrlLabel: "Базовый URL:",
+                themeText: "Тёмная тема",
+                placeholderText: "Введите текст для перевода...",
+                placeholderLang: "например, Испанский, Французский, Немецкий, Японский...",
+                loading: "Перевод...",
+                error: "Ошибка: ",
+                unknownError: "Произошла неизвестная ошибка",
+                statusCached: "из кэша",
+                statusGenerated: "сгенерирован",
+                statusRegenerated: "пересоздан"
+            }
+        };
+
+        // Theme and language state
+        let currentTheme = localStorage.getItem('theme') || 'light';
+        let currentLanguage = localStorage.getItem('language') || 'en';
+
+        // DOM elements
+        const themeToggle = document.getElementById('themeToggle');
+        const themeIcon = document.getElementById('themeIcon');
+        const themeText = document.getElementById('themeText');
+        const languageSelect = document.getElementById('languageSelect');
+        const charCount = document.getElementById('charCount');
+        const textArea = document.getElementById('text');
+
+        // Initialize theme and language
+        function initializeUI() {
+            // Set theme
+            document.body.setAttribute('data-theme', currentTheme);
+            updateThemeUI();
+            
+            // Set language
+            languageSelect.value = currentLanguage;
+            updateLanguageUI();
+            
+            // Update character count
+            updateCharCount();
+            
+            // Add event listeners
+            themeToggle.addEventListener('click', toggleTheme);
+            languageSelect.addEventListener('change', changeLanguage);
+            textArea.addEventListener('input', updateCharCount);
+        }
+
+        // Theme functions
+        function toggleTheme() {
+            currentTheme = currentTheme === 'light' ? 'dark' : 'light';
+            document.body.setAttribute('data-theme', currentTheme);
+            localStorage.setItem('theme', currentTheme);
+            updateThemeUI();
+        }
+
+        function updateThemeUI() {
+            if (currentTheme === 'dark') {
+                themeIcon.textContent = '☀️';
+                themeText.textContent = translations[currentLanguage].themeText;
+            } else {
+                themeIcon.textContent = '🌙';
+                themeText.textContent = translations[currentLanguage].themeText;
+            }
+        }
+
+        // Language functions
+        function changeLanguage() {
+            currentLanguage = languageSelect.value;
+            localStorage.setItem('language', currentLanguage);
+            updateLanguageUI();
+            updateThemeUI(); // Update theme text in new language
+        }
+
+        function updateLanguageUI() {
+            const t = translations[currentLanguage];
+            
+            // Update all text elements
+            document.getElementById('subtitle').textContent = t.subtitle;
+            document.getElementById('tagline').textContent = t.tagline;
+            document.getElementById('textLabel').textContent = t.textLabel;
+            document.getElementById('targetLangLabel').textContent = t.targetLangLabel;
+            document.getElementById('translateBtn').textContent = t.translateBtn;
+            document.getElementById('retranslateBtn').textContent = t.retranslateBtn;
+            document.getElementById('resultLabel').textContent = t.resultLabel;
+            document.getElementById('apiInfoTitle').textContent = t.apiInfoTitle;
+            document.getElementById('endpoint1').textContent = t.endpoint1;
+            document.getElementById('endpoint2').textContent = t.endpoint2;
+            document.getElementById('endpoint3').textContent = t.endpoint3;
+            document.getElementById('baseUrlLabel').textContent = t.baseUrlLabel;
+            
+            // Update placeholders
+            document.getElementById('text').placeholder = t.placeholderText;
+            document.getElementById('targetLang').placeholder = t.placeholderLang;
+        }
+
+        // Character count update
+        function updateCharCount() {
+            const count = textArea.value.length;
+            charCount.textContent = count;
+            
+            if (count > 1800) {
+                charCount.style.color = 'var(--error)';
+            } else if (count > 1500) {
+                charCount.style.color = 'var(--warning)';
+            } else {
+                charCount.style.color = 'var(--text-secondary)';
+            }
+        }
+
+        // Translation functions
+        async function translateText() {
+            await performTranslation('/api/translate');
+        }
+
+        async function retranslateText() {
+            await performTranslation('/api/retranslate');
+        }
+
+        async function performTranslation(endpoint) {
+            const text = document.getElementById('text').value.trim();
+            const targetLang = document.getElementById('targetLang').value.trim();
+            const resultDiv = document.getElementById('result');
+            const t = translations[currentLanguage];
+            
+            if (!text) {
+                alert(currentLanguage === 'ru' ? 'Пожалуйста, введите текст для перевода' : 'Please enter text to translate');
+                return;
+            }
+            
+            if (!targetLang) {
+                alert(currentLanguage === 'ru' ? 'Пожалуйста, укажите целевой язык' : 'Please specify target language');
+                return;
+            }
+            
+            // Show loading state
+            resultDiv.innerHTML = `<div class="result-loading"><div class="spinner"></div>${t.loading}</div>`;
+            resultDiv.className = '';
+            
+            try {
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        text: text,
+                        target_lang: targetLang
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    // Success
+                    const statusClass = `status-${data.status}`;
+                    const statusText = t[`status${data.status.charAt(0).toUpperCase() + data.status.slice(1)}`];
+                    
+                    resultDiv.innerHTML = `
+                        <div><strong>${data.translated_text}</strong></div>
+                        <div style="margin-top: 10px; color: var(--text-secondary); font-size: 0.9rem;">
+                            ${currentLanguage === 'ru' ? 'Исходный язык' : 'Source language'}: ${data.source_language} → 
+                            ${currentLanguage === 'ru' ? 'Целевой язык' : 'Target language'}: ${data.target_language}
+                            <span class="status-badge ${statusClass}">${statusText}</span>
+                        </div>
+                    `;
+                    resultDiv.className = 'result-success';
+                } else {
+                    // Error
+                    resultDiv.innerHTML = `<strong>${t.error}</strong> ${data.error || data.details || t.unknownError}`;
+                    resultDiv.className = 'result-error';
+                }
+            } catch (error) {
+                console.error('Translation error:', error);
+                resultDiv.innerHTML = `<strong>${t.error}</strong> ${t.unknownError}`;
+                resultDiv.className = 'result-error';
+            }
+        }
+
+        // Initialize the UI when the page loads
+        document.addEventListener('DOMContentLoaded', initializeUI);
+    </script>
 </body>
 </html>
