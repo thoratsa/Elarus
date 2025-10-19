@@ -35,7 +35,7 @@ if REDIS_URL:
 else:
     print("Redis URL not provided, caching disabled")
 
-app = Flask(__name__, static_folder='public')
+app = Flask(__name__)
 CORS(app)
 
 class TranslationError(Exception):
@@ -339,17 +339,18 @@ def retranslate():
 
 @app.route('/')
 def serve_index():
-    return send_from_directory('public', 'index.html')
+    with open('public/index.html', 'r') as f:
+        return f.read()
 
-@app.route('/<path:path>')
-def serve_static(path):
-    if path.endswith('.css'):
-        mimetype = 'text/css'
-    elif path.endswith('.js'):
-        mimetype = 'application/javascript'
-    else:
-        mimetype = None
-    return send_from_directory('public', path, mimetype=mimetype)
+@app.route('/style.css')
+def serve_css():
+    with open('public/style.css', 'r') as f:
+        return f.read(), 200, {'Content-Type': 'text/css'}
+
+@app.route('/script.js')
+def serve_js():
+    with open('public/script.js', 'r') as f:
+        return f.read(), 200, {'Content-Type': 'application/javascript'}
 
 if __name__ == '__main__':
     print(f"Starting Elarus Translation API (Groq model: {GROQ_MODEL})")
