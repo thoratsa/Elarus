@@ -7,6 +7,7 @@
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌐</text></svg>">
     <style>
         :root {
+            /* Light theme variables */
             --bg-primary: #f8fafc;
             --bg-secondary: #ffffff;
             --bg-tertiary: #f1f5f9;
@@ -26,6 +27,7 @@
         }
 
         [data-theme="dark"] {
+            /* Dark theme variables */
             --bg-primary: #0f172a;
             --bg-secondary: #1e293b;
             --bg-tertiary: #334155;
@@ -257,22 +259,95 @@
             box-shadow: var(--shadow);
         }
 
-        #result {
-            min-height: 200px;
-            padding: 15px;
-            border-radius: 8px;
+        /* Result boxes styling */
+        .result-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .result-box {
             background: var(--bg-tertiary);
             border: 1px solid var(--border-color);
-            white-space: pre-wrap;
+            border-radius: 8px;
+            padding: 15px;
+            position: relative;
             box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
         }
 
-        .result-success {
-            border-left: 4px solid var(--success);
+        .result-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
-        .result-error {
-            border-left: 4px solid var(--error);
+        .result-value {
+            font-size: 1rem;
+            color: var(--text-primary);
+            word-break: break-word;
+            padding-right: 50px;
+            min-height: 24px;
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: var(--bg-accent);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 6px 10px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+        }
+
+        .copy-btn:hover {
+            background: var(--accent-primary);
+            color: white;
+            transform: translateY(-1px);
+        }
+
+        .copy-btn.copied {
+            background: var(--success);
+            color: white;
+        }
+
+        .copy-icon {
+            width: 14px;
+            height: 14px;
+            fill: currentColor;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+
+        .status-cached {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success);
+        }
+
+        .status-generated {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--warning);
+        }
+
+        .status-regenerated {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--error);
         }
 
         .result-loading {
@@ -280,6 +355,7 @@
             align-items: center;
             justify-content: center;
             color: var(--text-muted);
+            padding: 40px;
         }
 
         .spinner {
@@ -326,30 +402,6 @@
 
         .hidden {
             display: none;
-        }
-
-        .status-badge {
-            display: inline-block;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            margin-left: 10px;
-        }
-
-        .status-cached {
-            background: rgba(16, 185, 129, 0.2);
-            color: var(--success);
-        }
-
-        .status-generated {
-            background: rgba(245, 158, 11, 0.2);
-            color: var(--warning);
-        }
-
-        .status-regenerated {
-            background: rgba(239, 68, 68, 0.2);
-            color: var(--error);
         }
     </style>
 </head>
@@ -402,7 +454,12 @@
                 
                 <div class="output-section">
                     <label id="resultLabel">Translation Result:</label>
-                    <div id="result"></div>
+                    <div id="result" class="result-container">
+                        <div class="result-loading">
+                            <div class="spinner"></div>
+                            <span id="loadingText">Waiting for translation...</span>
+                        </div>
+                    </div>
                 </div>
                 
                 <div class="api-info">
@@ -417,6 +474,7 @@
     </div>
 
     <script>
+        // Language translations
         const translations = {
             en: {
                 appName: "Elarus",
@@ -436,11 +494,18 @@
                 placeholderText: "Enter text to translate...",
                 placeholderLang: "e.g., Spanish, French, German, Japanese...",
                 loading: "Translating...",
+                waiting: "Waiting for translation...",
                 error: "Error: ",
                 unknownError: "An unknown error occurred",
                 statusCached: "cached",
                 statusGenerated: "generated",
-                statusRegenerated: "regenerated"
+                statusRegenerated: "regenerated",
+                copyText: "Copy",
+                copiedText: "Copied!",
+                translatedText: "Translated Text",
+                sourceLanguage: "Source Language",
+                targetLanguage: "Target Language",
+                translationStatus: "Translation Status"
             },
             ru: {
                 appName: "Эларус",
@@ -460,38 +525,54 @@
                 placeholderText: "Введите текст для перевода...",
                 placeholderLang: "например, Испанский, Французский, Немецкий, Японский...",
                 loading: "Перевод...",
+                waiting: "Ожидание перевода...",
                 error: "Ошибка: ",
                 unknownError: "Произошла неизвестная ошибка",
                 statusCached: "из кэша",
                 statusGenerated: "сгенерирован",
-                statusRegenerated: "пересоздан"
+                statusRegenerated: "пересоздан",
+                copyText: "Копировать",
+                copiedText: "Скопировано!",
+                translatedText: "Переведенный текст",
+                sourceLanguage: "Исходный язык",
+                targetLanguage: "Целевой язык",
+                translationStatus: "Статус перевода"
             }
         };
 
+        // Theme and language state
         let currentTheme = localStorage.getItem('theme') || 'light';
         let currentLanguage = localStorage.getItem('language') || 'en';
 
+        // DOM elements
         const themeToggle = document.getElementById('themeToggle');
         const themeIcon = document.getElementById('themeIcon');
         const languageSelect = document.getElementById('languageSelect');
         const charCount = document.getElementById('charCount');
         const textArea = document.getElementById('text');
         const appName = document.getElementById('appName');
+        const loadingText = document.getElementById('loadingText');
 
+        // Initialize theme and language
         function initializeUI() {
+            // Set theme
             document.body.setAttribute('data-theme', currentTheme);
             updateThemeUI();
             
+            // Set language
             languageSelect.value = currentLanguage;
             updateLanguageUI();
             
+            // Update character count
             updateCharCount();
             
+            // Add event listeners
             themeToggle.addEventListener('click', toggleTheme);
             languageSelect.addEventListener('change', changeLanguage);
             textArea.addEventListener('input', updateCharCount);
         }
 
+        // Theme functions
         function toggleTheme() {
             currentTheme = currentTheme === 'light' ? 'dark' : 'light';
             document.body.setAttribute('data-theme', currentTheme);
@@ -509,16 +590,18 @@
             themeToggle.setAttribute('title', translations[currentLanguage].themeText);
         }
 
+        // Language functions
         function changeLanguage() {
             currentLanguage = languageSelect.value;
             localStorage.setItem('language', currentLanguage);
             updateLanguageUI();
-            updateThemeUI();
+            updateThemeUI(); // Update theme text in new language
         }
 
         function updateLanguageUI() {
             const t = translations[currentLanguage];
             
+            // Update all text elements including app name
             appName.textContent = t.appName;
             document.getElementById('subtitle').textContent = t.subtitle;
             document.getElementById('tagline').textContent = t.tagline;
@@ -532,11 +615,14 @@
             document.getElementById('endpoint2').textContent = t.endpoint2;
             document.getElementById('endpoint3').textContent = t.endpoint3;
             document.getElementById('baseUrlLabel').textContent = t.baseUrlLabel;
+            loadingText.textContent = t.waiting;
             
+            // Update placeholders
             document.getElementById('text').placeholder = t.placeholderText;
             document.getElementById('targetLang').placeholder = t.placeholderLang;
         }
 
+        // Character count update
         function updateCharCount() {
             const count = textArea.value.length;
             charCount.textContent = count;
@@ -550,6 +636,45 @@
             }
         }
 
+        // Copy to clipboard function
+        function copyToClipboard(text, button) {
+            navigator.clipboard.writeText(text).then(() => {
+                const originalText = button.innerHTML;
+                button.innerHTML = `
+                    <svg class="copy-icon" viewBox="0 0 24 24">
+                        <path d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z" />
+                    </svg>
+                    ${translations[currentLanguage].copiedText}
+                `;
+                button.classList.add('copied');
+                
+                setTimeout(() => {
+                    button.innerHTML = originalText;
+                    button.classList.remove('copied');
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy text: ', err);
+            });
+        }
+
+        // Create result box with copy button
+        function createResultBox(label, value, id) {
+            const t = translations[currentLanguage];
+            return `
+                <div class="result-box" id="${id}">
+                    <div class="result-label">${label}</div>
+                    <div class="result-value">${value}</div>
+                    <button class="copy-btn" onclick="copyToClipboard('${value.replace(/'/g, "\\'")}', this)">
+                        <svg class="copy-icon" viewBox="0 0 24 24">
+                            <path d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z" />
+                        </svg>
+                        ${t.copyText}
+                    </button>
+                </div>
+            `;
+        }
+
+        // Translation functions
         async function translateText() {
             await performTranslation('/api/translate');
         }
@@ -574,8 +699,8 @@
                 return;
             }
             
+            // Show loading state
             resultDiv.innerHTML = `<div class="result-loading"><div class="spinner"></div>${t.loading}</div>`;
-            resultDiv.className = '';
             
             try {
                 const response = await fetch(endpoint, {
@@ -592,29 +717,34 @@
                 const data = await response.json();
                 
                 if (response.ok) {
+                    // Success - create individual boxes for each value
                     const statusClass = `status-${data.status}`;
                     const statusText = t[`status${data.status.charAt(0).toUpperCase() + data.status.slice(1)}`];
                     
                     resultDiv.innerHTML = `
-                        <div><strong>${data.translated_text}</strong></div>
-                        <div style="margin-top: 10px; color: var(--text-secondary); font-size: 0.9rem;">
-                            ${currentLanguage === 'ru' ? 'Исходный язык' : 'Source language'}: ${data.source_language} → 
-                            ${currentLanguage === 'ru' ? 'Целевой язык' : 'Target language'}: ${data.target_language}
-                            <span class="status-badge ${statusClass}">${statusText}</span>
-                        </div>
+                        ${createResultBox(t.translatedText, data.translated_text, 'translated-text-box')}
+                        ${createResultBox(t.sourceLanguage, data.source_language, 'source-lang-box')}
+                        ${createResultBox(t.targetLanguage, data.target_language, 'target-lang-box')}
+                        ${createResultBox(t.translationStatus, statusText, 'status-box')}
                     `;
-                    resultDiv.className = 'result-success';
+                    
+                    // Add status class to status box
+                    const statusBox = document.getElementById('status-box');
+                    statusBox.querySelector('.status-badge')?.remove();
+                    const statusValue = statusBox.querySelector('.result-value');
+                    statusValue.innerHTML = `${statusText} <span class="status-badge ${statusClass}">${data.status}</span>`;
+                    
                 } else {
-                    resultDiv.innerHTML = `<strong>${t.error}</strong> ${data.error || data.details || t.unknownError}`;
-                    resultDiv.className = 'result-error';
+                    // Error
+                    resultDiv.innerHTML = `<div class="result-box result-error"><strong>${t.error}</strong> ${data.error || data.details || t.unknownError}</div>`;
                 }
             } catch (error) {
                 console.error('Translation error:', error);
-                resultDiv.innerHTML = `<strong>${t.error}</strong> ${t.unknownError}`;
-                resultDiv.className = 'result-error';
+                resultDiv.innerHTML = `<div class="result-box result-error"><strong>${t.error}</strong> ${t.unknownError}</div>`;
             }
         }
 
+        // Initialize the UI when the page loads
         document.addEventListener('DOMContentLoaded', initializeUI);
     </script>
 </body>
