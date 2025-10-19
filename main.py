@@ -176,11 +176,9 @@ def call_groq_api_with_backoff(system_instruction, user_prompt):
         except (requests.exceptions.RequestException, requests.exceptions.HTTPError, ValueError) as e:
             if isinstance(e, (requests.exceptions.HTTPError, requests.exceptions.RequestException)):
                  if attempt < MAX_RETRIES - 1:
-                    print(f"API call failed (Attempt {attempt + 1}/{MAX_RETRIES}). Error: {e}. Retrying in {current_delay}s...")
                     time.sleep(current_delay)
                     current_delay *= 2
                  else:
-                    print(f"API call failed after {MAX_RETRIES} attempts. Final error: {e}")
                     raise
             else:
                 raise
