@@ -307,13 +307,13 @@ def retranslate():
     result = _process_translation(text_to_translate, target_lang, client_ip, force_refresh=True)
     return jsonify(result), 200
 
-@app.route('/')
-def serve_index():
-    return send_from_directory('public', 'index.html')
-
 @app.route('/<path:path>')
 def serve_static(path):
     return send_from_directory('public', path)
+
+@app.route('/')
+def serve_index():
+    return send_from_directory('public', 'index.html')
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
