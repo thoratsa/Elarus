@@ -1,7 +1,7 @@
 import os
 import json
 import requests
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify
 from flask_cors import CORS
 import redis
 import time
@@ -339,18 +339,39 @@ def retranslate():
 
 @app.route('/')
 def serve_index():
-    with open('public/index.html', 'r') as f:
-        return f.read()
+    try:
+        with open('public/index.html', 'r') as f:
+            return f.read()
+    except FileNotFoundError:
+        return jsonify({
+            "error": "Playground not available",
+            "details": "index.html file not found",
+            "status_code": 500
+        }), 500
 
 @app.route('/style.css')
 def serve_css():
-    with open('public/style.css', 'r') as f:
-        return f.read(), 200, {'Content-Type': 'text/css'}
+    try:
+        with open('public/style.css', 'r') as f:
+            return f.read(), 200, {'Content-Type': 'text/css'}
+    except FileNotFoundError:
+        return jsonify({
+            "error": "CSS file not found",
+            "details": "style.css file not found",
+            "status_code": 500
+        }), 500
 
 @app.route('/script.js')
 def serve_js():
-    with open('public/script.js', 'r') as f:
-        return f.read(), 200, {'Content-Type': 'application/javascript'}
+    try:
+        with open('public/script.js', 'r') as f:
+            return f.read(), 200, {'Content-Type': 'application/javascript'}
+    except FileNotFoundError:
+        return jsonify({
+            "error": "JavaScript file not found",
+            "details": "script.js file not found",
+            "status_code": 500
+        }), 500
 
 if __name__ == '__main__':
     print(f"Starting Elarus Translation API (Groq model: {GROQ_MODEL})")
