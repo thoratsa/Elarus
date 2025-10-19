@@ -21,14 +21,19 @@ RATE_LIMIT_SECONDS = 1
 MAX_RETRIES = 5
 BASE_DELAY = 1
 MAX_TEXT_LENGTH = 2000
+GROQ_TIMEOUT = 30
 
 r = None
 if REDIS_URL:
     try:
-        r = redis.from_url(REDIS_URL, decode_responses=True)
+        r = redis.from_url(REDIS_URL, decode_responses=True, socket_connect_timeout=5, socket_timeout=5)
         r.ping()
-    except Exception:
+        print("Redis connected successfully")
+    except Exception as e:
+        print(f"Redis connection failed: {e}")
         r = None
+else:
+    print("Redis URL not provided, caching disabled")
 
 app = Flask(__name__, static_folder='public')
 CORS(app)
@@ -112,13 +117,16 @@ def check_rate_limit(client_id):
         
         r.set(key, current_time, ex=RATE_LIMIT_SECONDS * 2)
         return True
-    except Exception:
+    except Exception as e:
+        print(f"Rate limit check failed: {e}")
         return True
 
 def get_source_language(text):
     try:
-        return detect(text).upper()
-    except LangDetectException:
+        lang = detect(text).upper()
+        return lang if lang != "UN" else "Unknown"
+    except LangDetectException as e:
+        print(f"Language detection failed: {e}")
         return "Unknown"
 
 def _get_client_ip():
@@ -134,6 +142,7 @@ def call_groq_api_with_backoff(system_instruction, user_prompt):
             {"role": "user", "content": user_prompt}
         ],
         "temperature": 0.2,
+        "max_tokens": 1000
     }
 
     headers = {
@@ -143,33 +152,40 @@ def call_groq_api_with_backoff(system_instruction, user_prompt):
 
     for attempt in range(MAX_RETRIES):
         try:
-            response = requests.post(API_URL, headers=headers, data=json.dumps(payload))
+            response = requests.post(
+                API_URL, 
+                headers=headers, 
+                data=json.dumps(payload),
+                timeout=GROQ_TIMEOUT
+            )
             response.raise_for_status()
 
             data = response.json()
             
-            if data and data.get('choices'):
-                text_content = data['choices'][0]['message']['content']
-                translated_text = text_content.strip()
-
-                if not translated_text:
-                    raise ValueError("LLM returned empty translation text.")
-                    
-                return translated_text
+            if not data or not data.get('choices'):
+                raise ValueError("API returned empty or invalid response")
             
-            raise ValueError(f"API returned unparseable response structure.")
+            text_content = data['choices'][0]['message']['content']
+            translated_text = text_content.strip()
+
+            if not translated_text:
+                raise ValueError("LLM returned empty translation text")
+                
+            return translated_text
 
         except (requests.exceptions.RequestException, requests.exceptions.HTTPError, ValueError) as e:
-            if isinstance(e, requests.exceptions.HTTPError) or isinstance(e, requests.exceptions.RequestException):
+            if isinstance(e, (requests.exceptions.HTTPError, requests.exceptions.RequestException)):
                  if attempt < MAX_RETRIES - 1:
+                    print(f"API call failed (Attempt {attempt + 1}/{MAX_RETRIES}). Error: {e}. Retrying in {current_delay}s...")
                     time.sleep(current_delay)
                     current_delay *= 2
                  else:
+                    print(f"API call failed after {MAX_RETRIES} attempts. Final error: {e}")
                     raise
             else:
                 raise
 
-    raise Exception("Translation failed after maximum retries.")
+    raise Exception("Translation failed after maximum retries")
 
 def _process_translation(text_to_translate, target_lang, client_ip, force_refresh=False):
     if not check_rate_limit(client_ip):
@@ -193,8 +209,8 @@ def _process_translation(text_to_translate, target_lang, client_ip, force_refres
                     "translated_text": cached_result['translated_text'],
                     "status": "cached"
                 }
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"Cache read error: {e}")
 
     system_instruction = (
         f"You are a professional, high-quality language translator. Your task is to translate the provided text "
@@ -225,8 +241,8 @@ def _process_translation(text_to_translate, target_lang, client_ip, force_refres
                     "model": GROQ_MODEL
                 }
                 r.set(cache_key, json.dumps(cache_data), ex=CACHE_EXPIRY_SECONDS)
-            except Exception:
-                pass
+            except Exception as e:
+                print(f"Cache write error: {e}")
         
         return response_data
 
@@ -264,6 +280,22 @@ def handle_translation_error(error):
     })
     response.status_code = error.status_code
     return response
+
+@app.errorhandler(404)
+def not_found(error):
+    return jsonify({
+        "error": "Endpoint not found",
+        "details": "The requested endpoint does not exist",
+        "status_code": 404
+    }), 404
+
+@app.errorhandler(500)
+def internal_error(error):
+    return jsonify({
+        "error": "Internal server error",
+        "details": "An unexpected error occurred",
+        "status_code": 500
+    }), 500
 
 @app.route('/api/health', methods=['GET'])
 def health_check():
@@ -313,7 +345,16 @@ def serve_index():
 
 @app.route('/<path:path>')
 def serve_static(path):
-    return send_from_directory('public', path)
+    if path.endswith('.css'):
+        mimetype = 'text/css'
+    elif path.endswith('.js'):
+        mimetype = 'application/javascript'
+    else:
+        mimetype = None
+    return send_from_directory('public', path, mimetype=mimetype)
 
 if __name__ == '__main__':
+    print(f"Starting Elarus Translation API (Groq model: {GROQ_MODEL})")
+    print(f"Playground available at: http://localhost:5000")
+    print(f"API endpoints available at: /api/translate, /api/retranslate, /api/health")
     app.run(debug=True, host='0.0.0.0', port=5000)
