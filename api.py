@@ -19,7 +19,7 @@ API_URL = "https://api.groq.com/openai/v1/chat/completions"
 CACHE_EXPIRY_SECONDS = 60 * 60 * 24 * 7 
 RATE_LIMIT_SECONDS = 1
 MAX_RETRIES = 5
-BASE_DELAY = 1
+BASE_DELAY = 0
 MAX_TEXT_LENGTH = 2000
 
 r = None
