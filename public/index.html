@@ -7,26 +7,6 @@
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌐</text></svg>">
     <style>
         :root {
-            /* Light theme variables */
-            --bg-primary: #f8fafc;
-            --bg-secondary: #ffffff;
-            --bg-tertiary: #f1f5f9;
-            --bg-accent: #e2e8f0;
-            --text-primary: #1e293b;
-            --text-secondary: #475569;
-            --text-muted: #64748b;
-            --accent-primary: #3b82f6;
-            --accent-secondary: #1d4ed8;
-            --border-color: #cbd5e1;
-            --border-light: #e2e8f0;
-            --shadow: 0 4px 6px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.1);
-            --shadow-hover: 0 10px 15px rgba(0, 0, 0, 0.1), 0 4px 6px rgba(0, 0, 0, 0.05);
-            --success: #10b981;
-            --warning: #f59e0b;
-            --error: #ef4444;
-        }
-
-        [data-theme="dark"] {
             --bg-primary: #0f172a;
             --bg-secondary: #1e293b;
             --bg-tertiary: #334155;
@@ -40,6 +20,25 @@
             --border-light: #334155;
             --shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
             --shadow-hover: 0 10px 15px rgba(0, 0, 0, 0.4);
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
+        }
+
+        [data-theme="dark"] {
+            --bg-primary: #f8fafc;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #f1f5f9;
+            --bg-accent: #e2e8f0;
+            --text-primary: #1e293b;
+            --text-secondary: #475569;
+            --text-muted: #64748b;
+            --accent-primary: #3b82f6;
+            --accent-secondary: #1d4ed8;
+            --border-color: #cbd5e1;
+            --border-light: #e2e8f0;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.1);
+            --shadow-hover: 0 10px 15px rgba(0, 0, 0, 0.1), 0 4px 6px rgba(0, 0, 0, 0.05);
             --success: #10b981;
             --warning: #f59e0b;
             --error: #ef4444;
@@ -306,7 +305,6 @@
             box-shadow: var(--shadow);
         }
 
-        /* Result boxes styling */
         .result-container {
             display: flex;
             flex-direction: column;
@@ -494,6 +492,13 @@
         .hidden {
             display: none;
         }
+
+        .response-time {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            text-align: right;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -563,6 +568,7 @@
                             <span id="loadingText">Waiting for translation...</span>
                         </div>
                     </div>
+                    <div class="response-time" id="responseTime"></div>
                 </div>
                 
                 <div class="api-info">
@@ -653,7 +659,8 @@ print(f"Translation: {result['translated_text']}")<br>
                 usage3: "Chatbots: Enable multilingual conversations",
                 usage4: "Content Management: Automate translation of user-generated content",
                 usage5: "Developer Tools: Build translation plugins and extensions",
-                githubLinkText: "Check out the GitHub repository for full documentation, examples, and source code."
+                githubLinkText: "Check out the GitHub repository for full documentation, examples, and source code.",
+                responseTime: "Response time: "
             },
             ru: {
                 appName: "Эларус",
@@ -694,7 +701,8 @@ print(f"Translation: {result['translated_text']}")<br>
                 usage3: "Чат-боты: Включите многоязычные беседы",
                 usage4: "Управление контентом: Автоматизируйте перевод пользовательского контента",
                 usage5: "Инструменты разработчика: Создавайте плагины и расширения для перевода",
-                githubLinkText: "Ознакомьтесь с репозиторием GitHub для полной документации, примеров и исходного кода."
+                githubLinkText: "Ознакомьтесь с репозиторием GitHub для полной документации, примеров и исходного кода.",
+                responseTime: "Время ответа: "
             }
         };
     
@@ -708,6 +716,7 @@ print(f"Translation: {result['translated_text']}")<br>
         const textArea = document.getElementById('text');
         const appName = document.getElementById('appName');
         const loadingText = document.getElementById('loadingText');
+        const responseTime = document.getElementById('responseTime');
     
         function initializeUI() {
             document.body.setAttribute('data-theme', currentTheme);
@@ -854,6 +863,9 @@ print(f"Translation: {result['translated_text']}")<br>
             }
             
             resultDiv.innerHTML = `<div class="result-loading"><div class="spinner"></div>${t.loading}</div>`;
+            responseTime.textContent = '';
+            
+            const startTime = performance.now();
             
             try {
                 const response = await fetch(endpoint, {
@@ -867,6 +879,9 @@ print(f"Translation: {result['translated_text']}")<br>
                         source_lang: sourceLang
                     })
                 });
+                
+                const endTime = performance.now();
+                const responseTimeMs = (endTime - startTime).toFixed(0);
                 
                 const data = await response.json();
                 
@@ -886,12 +901,19 @@ print(f"Translation: {result['translated_text']}")<br>
                     const statusValue = statusBox.querySelector('.result-value');
                     statusValue.innerHTML = `${statusText} <span class="status-badge ${statusClass}">${data.status}</span>`;
                     
+                    responseTime.textContent = `${t.responseTime}${responseTimeMs}ms`;
+                    
                 } else {
                     resultDiv.innerHTML = `<div class="result-box result-error"><strong>${t.error}</strong> ${data.error || data.details || t.unknownError}</div>`;
+                    responseTime.textContent = `${t.responseTime}${responseTimeMs}ms`;
                 }
             } catch (error) {
+                const endTime = performance.now();
+                const responseTimeMs = (endTime - startTime).toFixed(0);
+                
                 console.error('Translation error:', error);
                 resultDiv.innerHTML = `<div class="result-box result-error"><strong>${t.error}</strong> ${t.unknownError}</div>`;
+                responseTime.textContent = `${t.responseTime}${responseTimeMs}ms`;
             }
         }
     
