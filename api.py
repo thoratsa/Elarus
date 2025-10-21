@@ -12,14 +12,15 @@ from functools import wraps
 
 DetectorFactory.seed = 0
 
-REDIS_URL = os.environ.get('REDIS_URL')
-GROQ_MODEL = "openai/gpt-oss-120b"
-API_KEY = os.environ.get("GROQ_API_KEY", "") 
+REDIS_URL = os.environ.get('REDIS_URL_REDIS_URL')
+GROQ_MODEL = os.environ.get("GROQ_MODEL")
+API_KEY = os.environ.get("GROQ_API_KEY") 
 API_URL = "https://api.groq.com/openai/v1/chat/completions"
 CACHE_EXPIRY_SECONDS = 60 * 60 * 24 * 7 
-RATE_LIMIT_SECONDS = 1
+RATE_LIMIT_SECONDS = 2
+MAX_TOKENS_PER_REQUEST = 130
 MAX_RETRIES = 5
-BASE_DELAY = 1
+BASE_DELAY = 0
 MAX_TEXT_LENGTH = 2000
 
 r = None
@@ -108,19 +109,39 @@ def check_rate_limit(client_id):
         return True
     
     current_time = time.time()
-    key = f"rate_limit:{client_id}"
+    rate_limit_key = f"rate_limit:{client_id}"
+    token_limit_key = f"token_limit:{client_id}"
     
     try:
-        last_request_time = r.get(key)
+        last_request_time = r.get(rate_limit_key)
         if last_request_time:
             time_since_last = current_time - float(last_request_time)
             if time_since_last < RATE_LIMIT_SECONDS:
                 return False
         
-        r.set(key, current_time, ex=RATE_LIMIT_SECONDS * 2)
+        token_count = r.get(token_limit_key)
+        if token_count and int(token_count) >= MAX_TOKENS_PER_REQUEST:
+            return False
+        
+        r.set(rate_limit_key, current_time, ex=RATE_LIMIT_SECONDS * 2)
         return True
     except Exception:
         return True
+
+def update_token_count(client_id, tokens_used):
+    if not r:
+        return
+    
+    try:
+        token_limit_key = f"token_limit:{client_id}"
+        current_tokens = r.get(token_limit_key)
+        if current_tokens:
+            new_total = int(current_tokens) + tokens_used
+            r.set(token_limit_key, new_total, ex=86400)
+        else:
+            r.set(token_limit_key, tokens_used, ex=86400)
+    except Exception:
+        pass
 
 def get_source_language(text):
     try:
@@ -141,6 +162,7 @@ def call_groq_api_with_backoff(system_instruction, user_prompt):
             {"role": "user", "content": user_prompt}
         ],
         "temperature": 0.2,
+        "max_tokens": MAX_TOKENS_PER_REQUEST
     }
 
     headers = {
@@ -216,6 +238,9 @@ def _process_translation(text_to_translate, target_lang, client_ip, force_refres
     try:
         translated_text = call_groq_api_with_backoff(system_instruction, user_prompt)
         
+        tokens_used = len(text_to_translate.split()) + len(translated_text.split())
+        update_token_count(client_ip, tokens_used)
+        
         response_data = {
             "source_language": source_language_code,
             "target_language": target_lang,
@@ -280,6 +305,7 @@ def health_check():
         "groq_api": "configured" if API_KEY else "not_configured",
         "max_text_length": MAX_TEXT_LENGTH,
         "rate_limit": f"{RATE_LIMIT_SECONDS} second(s)",
+        "max_tokens_per_request": MAX_TOKENS_PER_REQUEST,
         "timestamp": time.time()
     }
     return jsonify(health_status), 200
