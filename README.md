@@ -19,7 +19,8 @@ All translation endpoints accept JSON with:
 ```json
 {
   "text": "Text to translate",
-  "target_lang": "Target language"
+  "target_lang": "Target language",
+  "source_lang": "Source language (optional)"
 }
 ```
 
@@ -45,7 +46,7 @@ curl -X POST https://elarus.vercel.app/api/translate \
 
 # Force fresh translation
 curl -X POST https://elarus.vercel.app/api/retranslate \
-  -H "Content-Type: application/json" \
+  -H "Content-Type": application/json" \
   -d '{"text": "Hello world", "target_lang": "French"}'
 
 # Health check
@@ -205,16 +206,16 @@ func main() {
 
 - **AI-Powered**: Uses Groq's GPT-OSS-120B model for high-quality translations
 - **Smart Caching**: Redis-based caching reduces latency for repeated translations
-- **Auto Language Detection**: Automatically identifies source language
-- **Rate Limiting**: 1 request per second per IP to ensure fair usage
+- **Auto Language Detection**: Automatically identifies source language if not set
 - **JSON API**: Consistent RESTful API with detailed error responses
-- **Multi-language Support**: 100+ languages including English, Spanish, French, German, Chinese, Japanese, Arabic, and more
+- **Multi-language Support**: 100+ languages including English, Spanish, French, German, Chinese, Japanese, Arabic, and many more
+- **Fast Response Times**: Typically responds within milliseconds to 5 seconds depending on text length and cache status
 
-## Rate Limits & Limits
+## Rate Limits & Performance
 
-- **Rate Limit**: 1 request per second per IP address
-- **Text Length**: Maximum 2000 characters per request
-- **Response Time**: Typically < 2 seconds for translations
+- **Rate Limit**: 1 request per 2 seconds per IP address
+- **Token Limit**: 300 tokens per request per IP address
+- **Response Time**: Typically between milliseconds and 5 seconds
 
 ## Error Handling
 
