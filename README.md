@@ -205,17 +205,19 @@ func main() {
 ## Features
 
 - **AI-Powered**: Uses Groq's GPT-OSS-120B model for high-quality translations
-- **Smart Caching**: Redis-based caching reduces latency for repeated translations
-- **Auto Language Detection**: Automatically identifies source language if not set
+- **Smart Caching**: Redis-based caching reduces latency for repeated and common translations
+- **Auto Language Detection**: Automatically identifies source language
 - **JSON API**: Consistent RESTful API with detailed error responses
 - **Multi-language Support**: 100+ languages including English, Spanish, French, German, Chinese, Japanese, Arabic, and many more
 - **Fast Response Times**: Typically responds within milliseconds to 5 seconds depending on text length and cache status
 
-## Rate Limits & Performance
+## Limits & Performance
 
-- **Rate Limit**: 1 request per 2 seconds per IP address
-- **Token Limit**: 300 tokens per request per IP address
-- **Response Time**: Typically between milliseconds and 5 seconds
+- **Rate Limit**: 1 request per 2 seconds for every IP address
+- **Token Limit**: Maximum 300 tokens per request
+- **Text Length**: Maximum 2000 characters per request
+- **Response Time**: Typically between milliseconds and 5 seconds depending on text length and cache status
+- **Cached Responses**: Near-instant response for repeated translations
 
 ## Error Handling
 
