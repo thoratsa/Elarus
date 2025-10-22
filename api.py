@@ -127,6 +127,14 @@ def validate_input(f):
                 "status_code": e.status_code,
                 "timestamp": time.time()
             }), e.status_code
+        except TranslationError as e:
+            return jsonify({
+                "error": e.message,
+                "details": e.details,
+                "error_type": e.error_type,
+                "status_code": e.status_code,
+                "timestamp": time.time()
+            }), e.status_code
         except Exception as e:
             return jsonify({
                 "error": "Invalid request format",
