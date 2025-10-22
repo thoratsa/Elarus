@@ -18,7 +18,7 @@ API_KEY = os.environ.get("GROQ_API_KEY")
 API_URL = "https://api.groq.com/openai/v1/chat/completions"
 CACHE_EXPIRY_SECONDS = 60 * 60 * 24 * 7 
 RATE_LIMIT_SECONDS = 2
-MAX_TOKENS_PER_REQUEST = 1500
+MAX_TOKENS_PER_REQUEST = 300
 MAX_RETRIES = 5
 BASE_DELAY = 0
 MAX_TEXT_LENGTH = 2000
@@ -163,7 +163,12 @@ def check_rate_limit(client_id):
         
         token_count = r.get(token_limit_key)
         if token_count and int(token_count) >= MAX_TOKENS_PER_REQUEST:
-            return False, f"Token limit reached ({token_count}/{MAX_TOKENS_PER_REQUEST})"
+            reset_time = r.ttl(token_limit_key)
+            if reset_time > 0:
+                return False, f"Token limit reached ({token_count}/{MAX_TOKENS_PER_REQUEST}). Resets in {reset_time} seconds"
+            else:
+                r.delete(token_limit_key)
+                return True, None
         
         r.set(rate_limit_key, current_time, ex=RATE_LIMIT_SECONDS * 2)
         return True, None
@@ -180,9 +185,9 @@ def update_token_count(client_id, tokens_used):
         current_tokens = r.get(token_limit_key)
         if current_tokens:
             new_total = int(current_tokens) + tokens_used
-            r.set(token_limit_key, new_total, ex=86400)
+            r.set(token_limit_key, new_total, ex=60)
         else:
-            r.set(token_limit_key, tokens_used, ex=86400)
+            r.set(token_limit_key, tokens_used, ex=60)
         return True
     except Exception as e:
         return False
@@ -319,10 +324,16 @@ def call_groq_api_with_backoff(system_instruction, user_prompt):
 def _process_translation(text_to_translate, target_lang, client_ip, force_refresh=False, source_lang_override=None):
     rate_ok, rate_message = check_rate_limit(client_ip)
     if not rate_ok:
-        raise RateLimitError(
-            f"Rate limit exceeded for IP {client_ip}",
-            rate_message
-        )
+        if "token limit reached" in rate_message.lower():
+            raise TokenLimitError(
+                "Token limit exceeded",
+                rate_message
+            )
+        else:
+            raise RateLimitError(
+                "Rate limit exceeded",
+                rate_message
+            )
 
     try:
         source_language_code = source_lang_override.upper() if source_lang_override else get_source_language(text_to_translate)
@@ -460,7 +471,8 @@ def health_check():
         "limits": {
             "max_text_length": MAX_TEXT_LENGTH,
             "rate_limit_seconds": RATE_LIMIT_SECONDS,
-            "max_tokens_per_request": MAX_TOKENS_PER_REQUEST
+            "max_tokens_per_request": MAX_TOKENS_PER_REQUEST,
+            "token_reset_seconds": 60
         },
         "timestamp": time.time()
     }
