@@ -35,78 +35,111 @@ app = Flask(__name__, static_folder='public')
 CORS(app)
 
 class TranslationError(Exception):
-    def __init__(self, message, status_code=400, details=None):
+    def __init__(self, message, status_code=400, details=None, error_type=None):
         self.message = message
         self.status_code = status_code
         self.details = details
+        self.error_type = error_type or "translation_error"
         super().__init__(self.message)
 
 class RateLimitError(TranslationError):
     def __init__(self, message="Rate limit exceeded", details=None):
-        super().__init__(message, 429, details)
+        super().__init__(message, 429, details, "rate_limit_error")
+
+class TokenLimitError(TranslationError):
+    def __init__(self, message="Token limit exceeded", details=None):
+        super().__init__(message, 429, details, "token_limit_error")
 
 class APIKeyError(TranslationError):
     def __init__(self, message="API key not configured", details=None):
-        super().__init__(message, 500, details)
+        super().__init__(message, 500, details, "api_key_error")
 
 class InputValidationError(TranslationError):
     def __init__(self, message="Invalid input", details=None):
-        super().__init__(message, 400, details)
+        super().__init__(message, 400, details, "validation_error")
+
+class GroqAPIError(TranslationError):
+    def __init__(self, message="Groq API error", details=None, status_code=500):
+        super().__init__(message, status_code, details, "groq_api_error")
+
+class CacheError(TranslationError):
+    def __init__(self, message="Cache error", details=None):
+        super().__init__(message, 500, details, "cache_error")
 
 def validate_input(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         try:
+            if not request.is_json:
+                raise InputValidationError(
+                    "Request must be JSON format",
+                    "Set Content-Type header to application/json"
+                )
+            
             data = request.get_json()
             if not data:
-                raise InputValidationError("Request must be JSON")
+                raise InputValidationError(
+                    "Empty request body",
+                    "Request body must contain valid JSON data"
+                )
             
             text = data.get('text', '').strip()
             target_lang = data.get('target_lang', '').strip()
             source_lang = data.get('source_lang', '').strip()
 
-            if len(text) > MAX_TEXT_LENGTH:
+            if not text:
                 raise InputValidationError(
-                    f"Text too long. Maximum {MAX_TEXT_LENGTH} characters.",
-                    f"Text length: {len(text)} characters"
+                    "Text field is required",
+                    "Provide text to translate in the 'text' field"
                 )
             
-            if not text:
-                raise InputValidationError("Text cannot be empty")
-                
+            if len(text) > MAX_TEXT_LENGTH:
+                raise InputValidationError(
+                    f"Text exceeds maximum length of {MAX_TEXT_LENGTH} characters",
+                    f"Current length: {len(text)} characters. Please shorten your text."
+                )
+            
             if not target_lang:
-                raise InputValidationError("Target language cannot be empty")
+                raise InputValidationError(
+                    "Target language is required",
+                    "Provide target language in the 'target_lang' field"
+                )
             
             if not re.match(r'^[A-Za-z\s\-]+$', target_lang):
                 raise InputValidationError(
                     "Invalid target language format",
-                    "Use only letters, spaces, and hyphens"
+                    "Target language can only contain letters, spaces, and hyphens"
                 )
             
             if source_lang and not re.match(r'^[A-Za-z\s\-]+$', source_lang):
                 raise InputValidationError(
                     "Invalid source language format",
-                    "Use only letters, spaces, and hyphens"
+                    "Source language can only contain letters, spaces, and hyphens"
                 )
                 
             return f(*args, **kwargs)
+            
         except InputValidationError as e:
             return jsonify({
                 "error": e.message,
                 "details": e.details,
-                "status_code": e.status_code
+                "error_type": e.error_type,
+                "status_code": e.status_code,
+                "timestamp": time.time()
             }), e.status_code
         except Exception as e:
             return jsonify({
                 "error": "Invalid request format",
-                "details": str(e),
-                "status_code": 400
+                "details": f"Failed to parse request: {str(e)}",
+                "error_type": "request_parse_error",
+                "status_code": 400,
+                "timestamp": time.time()
             }), 400
     return decorated_function
 
 def check_rate_limit(client_id):
     if not r:
-        return True
+        return True, None
     
     current_time = time.time()
     rate_limit_key = f"rate_limit:{client_id}"
@@ -117,20 +150,22 @@ def check_rate_limit(client_id):
         if last_request_time:
             time_since_last = current_time - float(last_request_time)
             if time_since_last < RATE_LIMIT_SECONDS:
-                return False
+                wait_time = RATE_LIMIT_SECONDS - time_since_last
+                return False, f"Wait {wait_time:.1f} seconds before next request"
         
         token_count = r.get(token_limit_key)
         if token_count and int(token_count) >= MAX_TOKENS_PER_REQUEST:
-            return False
+            return False, f"Token limit reached ({token_count}/{MAX_TOKENS_PER_REQUEST})"
         
         r.set(rate_limit_key, current_time, ex=RATE_LIMIT_SECONDS * 2)
-        return True
-    except Exception:
-        return True
+        return True, None
+        
+    except Exception as e:
+        return True, f"Rate limit check failed: {str(e)}"
 
 def update_token_count(client_id, tokens_used):
     if not r:
-        return
+        return False
     
     try:
         token_limit_key = f"token_limit:{client_id}"
@@ -140,17 +175,24 @@ def update_token_count(client_id, tokens_used):
             r.set(token_limit_key, new_total, ex=86400)
         else:
             r.set(token_limit_key, tokens_used, ex=86400)
-    except Exception:
-        pass
+        return True
+    except Exception as e:
+        return False
 
 def get_source_language(text):
     try:
-        return detect(text).upper()
-    except LangDetectException:
-        return "Unknown"
+        detected = detect(text)
+        return detected.upper() if detected else "UNKNOWN"
+    except LangDetectException as e:
+        return "UNKNOWN"
+    except Exception as e:
+        return "UNKNOWN"
 
 def _get_client_ip():
-    return request.headers.get('X-Forwarded-For', request.remote_addr).split(',')[0].strip()
+    forwarded_for = request.headers.get('X-Forwarded-For')
+    if forwarded_for:
+        return forwarded_for.split(',')[0].strip()
+    return request.remote_addr
 
 def call_groq_api_with_backoff(system_instruction, user_prompt):
     current_delay = BASE_DELAY
@@ -170,44 +212,115 @@ def call_groq_api_with_backoff(system_instruction, user_prompt):
         'Authorization': f'Bearer {API_KEY}'
     }
 
+    last_exception = None
+    
     for attempt in range(MAX_RETRIES):
         try:
-            response = requests.post(API_URL, headers=headers, data=json.dumps(payload))
+            response = requests.post(API_URL, headers=headers, data=json.dumps(payload), timeout=30)
             response.raise_for_status()
 
             data = response.json()
             
-            if data and data.get('choices'):
-                text_content = data['choices'][0]['message']['content']
-                translated_text = text_content.strip()
-
-                if not translated_text:
-                    raise ValueError("LLM returned empty translation text.")
-                    
-                return translated_text
+            if not data or not data.get('choices'):
+                raise GroqAPIError(
+                    "Invalid response format from Groq API",
+                    "No choices returned in response",
+                    502
+                )
             
-            raise ValueError(f"API returned unparseable response structure.")
+            text_content = data['choices'][0]['message']['content']
+            if not text_content:
+                raise GroqAPIError(
+                    "Empty translation response",
+                    "Groq API returned empty content",
+                    502
+                )
+                
+            translated_text = text_content.strip()
+            if not translated_text:
+                raise GroqAPIError(
+                    "Empty translation result",
+                    "Translation resulted in empty text",
+                    502
+                )
+                    
+            return translated_text
 
-        except (requests.exceptions.RequestException, requests.exceptions.HTTPError, ValueError) as e:
-            if isinstance(e, requests.exceptions.HTTPError) or isinstance(e, requests.exceptions.RequestException):
-                 if attempt < MAX_RETRIES - 1:
-                    time.sleep(current_delay)
-                    current_delay *= 2
-                 else:
-                    raise
+        except requests.exceptions.Timeout:
+            last_exception = GroqAPIError(
+                "Groq API timeout",
+                f"Request timed out after 30 seconds (attempt {attempt + 1}/{MAX_RETRIES})",
+                504
+            )
+        except requests.exceptions.HTTPError as e:
+            status_code = e.response.status_code
+            try:
+                error_data = e.response.json()
+                error_msg = error_data.get('error', {}).get('message', 'Unknown API error')
+            except:
+                error_msg = str(e)
+            
+            if status_code == 401:
+                last_exception = APIKeyError(
+                    "Invalid Groq API key",
+                    "Check your GROQ_API_KEY environment variable"
+                )
+            elif status_code == 429:
+                last_exception = GroqAPIError(
+                    "Groq API rate limit exceeded",
+                    f"Too many requests to Groq API: {error_msg}",
+                    429
+                )
             else:
-                raise
+                last_exception = GroqAPIError(
+                    f"Groq API error (HTTP {status_code})",
+                    error_msg,
+                    status_code
+                )
+        except requests.exceptions.RequestException as e:
+            last_exception = GroqAPIError(
+                "Network error connecting to Groq API",
+                f"Request failed: {str(e)}",
+                503
+            )
+        except ValueError as e:
+            last_exception = GroqAPIError(
+                "Invalid response from Groq API",
+                f"Failed to parse response: {str(e)}",
+                502
+            )
+        except Exception as e:
+            last_exception = GroqAPIError(
+                "Unexpected error calling Groq API",
+                f"Unexpected error: {str(e)}",
+                500
+            )
 
-    raise Exception("Translation failed after maximum retries.")
+        if attempt < MAX_RETRIES - 1:
+            time.sleep(current_delay)
+            current_delay *= 2
+        else:
+            raise last_exception
+
+    raise GroqAPIError(
+        "Translation failed after maximum retries",
+        f"Last error: {str(last_exception)}",
+        500
+    )
 
 def _process_translation(text_to_translate, target_lang, client_ip, force_refresh=False, source_lang_override=None):
-    if not check_rate_limit(client_ip):
+    rate_ok, rate_message = check_rate_limit(client_ip)
+    if not rate_ok:
         raise RateLimitError(
-            f"Rate limit exceeded. Try again in {RATE_LIMIT_SECONDS} second(s).",
-            f"Client IP: {client_ip}"
+            f"Rate limit exceeded for IP {client_ip}",
+            rate_message
         )
 
-    source_language_code = source_lang_override.upper() if source_lang_override else get_source_language(text_to_translate)
+    try:
+        source_language_code = source_lang_override.upper() if source_lang_override else get_source_language(text_to_translate)
+    except Exception as e:
+        source_language_code = "UNKNOWN"
+
     cache_key = f"translation:{text_to_translate}|{target_lang}"
     status_type = "regenerated" if force_refresh else "generated"
 
@@ -220,9 +333,10 @@ def _process_translation(text_to_translate, target_lang, client_ip, force_refres
                     "source_language": cached_result['source_language'],
                     "target_language": target_lang,
                     "translated_text": cached_result['translated_text'],
-                    "status": "cached"
+                    "status": "cached",
+                    "cache_timestamp": cached_result.get('timestamp')
                 }
-        except Exception:
+        except Exception as e:
             pass
 
     system_instruction = (
@@ -239,13 +353,15 @@ def _process_translation(text_to_translate, target_lang, client_ip, force_refres
         translated_text = call_groq_api_with_backoff(system_instruction, user_prompt)
         
         tokens_used = len(text_to_translate.split()) + len(translated_text.split())
-        update_token_count(client_ip, tokens_used)
+        token_updated = update_token_count(client_ip, tokens_used)
         
         response_data = {
             "source_language": source_language_code,
             "target_language": target_lang,
             "translated_text": translated_text,
-            "status": status_type
+            "status": status_type,
+            "tokens_used": tokens_used,
+            "cache_available": False
         }
         
         if r:
@@ -254,58 +370,90 @@ def _process_translation(text_to_translate, target_lang, client_ip, force_refres
                     "source_language": source_language_code,
                     "translated_text": translated_text,
                     "timestamp": time.time(),
-                    "model": GROQ_MODEL
+                    "model": GROQ_MODEL,
+                    "tokens_used": tokens_used
                 }
                 r.set(cache_key, json.dumps(cache_data), ex=CACHE_EXPIRY_SECONDS)
-            except Exception:
-                pass
+                response_data["cache_available"] = True
+            except Exception as e:
+                response_data["cache_available"] = False
         
         return response_data
 
-    except ValueError as ve:
-        raise TranslationError(
-            "The model struggled to generate a translation. The input may be too short or ambiguous.",
-            details=str(ve)
-        )
-
-    except requests.exceptions.HTTPError as e:
-        status_code = e.response.status_code
-        try:
-            error_details = e.response.json().get('error', {}).get('message', 'Unknown API Error')
-        except:
-            error_details = 'Could not parse error details from Groq.'
-        raise TranslationError(
-            f"Groq API Error ({status_code})",
-            status_code=status_code,
-            details=error_details
-        )
-
     except Exception as e:
-        raise TranslationError(
-            "An internal server error occurred",
-            status_code=500,
-            details=str(e)
-        )
+        if isinstance(e, TranslationError):
+            raise e
+        else:
+            raise TranslationError(
+                "Translation processing failed",
+                f"Unexpected error during translation: {str(e)}",
+                500,
+                "processing_error"
+            )
 
 @app.errorhandler(TranslationError)
 def handle_translation_error(error):
     response = jsonify({
         "error": error.message,
         "details": error.details,
-        "status_code": error.status_code
+        "error_type": error.error_type,
+        "status_code": error.status_code,
+        "timestamp": time.time()
     })
     response.status_code = error.status_code
     return response
 
+@app.errorhandler(404)
+def not_found(error):
+    return jsonify({
+        "error": "Endpoint not found",
+        "details": "The requested API endpoint does not exist",
+        "error_type": "not_found_error",
+        "status_code": 404,
+        "timestamp": time.time()
+    }), 404
+
+@app.errorhandler(405)
+def method_not_allowed(error):
+    return jsonify({
+        "error": "Method not allowed",
+        "details": "The HTTP method is not supported for this endpoint",
+        "error_type": "method_error",
+        "status_code": 405,
+        "timestamp": time.time()
+    }), 405
+
+@app.errorhandler(500)
+def internal_server_error(error):
+    return jsonify({
+        "error": "Internal server error",
+        "details": "An unexpected error occurred on the server",
+        "error_type": "internal_error",
+        "status_code": 500,
+        "timestamp": time.time()
+    }), 500
+
 @app.route('/api/health', methods=['GET'])
 def health_check():
+    redis_status = "unknown"
+    if r:
+        try:
+            r.ping()
+            redis_status = "connected"
+        except:
+            redis_status = "disconnected"
+    else:
+        redis_status = "not_configured"
+    
     health_status = {
         "status": "healthy",
-        "redis": "connected" if r and r.ping() else "disconnected",
+        "redis": redis_status,
         "groq_api": "configured" if API_KEY else "not_configured",
-        "max_text_length": MAX_TEXT_LENGTH,
-        "rate_limit": f"{RATE_LIMIT_SECONDS} second(s)",
-        "max_tokens_per_request": MAX_TOKENS_PER_REQUEST,
+        "limits": {
+            "max_text_length": MAX_TEXT_LENGTH,
+            "rate_limit_seconds": RATE_LIMIT_SECONDS,
+            "max_tokens_per_request": MAX_TOKENS_PER_REQUEST
+        },
         "timestamp": time.time()
     }
     return jsonify(health_status), 200
