@@ -499,6 +499,24 @@
             text-align: right;
             margin-top: 10px;
         }
+
+        .error-details {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 5px;
+            font-style: italic;
+        }
+
+        .error-type {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            margin-left: 8px;
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--error);
+        }
     </style>
 </head>
 <body>
@@ -660,7 +678,13 @@ print(f"Translation: {result['translated_text']}")<br>
                 usage4: "Content Management: Automate translation of user-generated content",
                 usage5: "Developer Tools: Build translation plugins and extensions",
                 githubLinkText: "Check out the GitHub repository for full documentation, examples, and source code.",
-                responseTime: "Response time: "
+                responseTime: "Response time: ",
+                networkError: "Network error - check your connection",
+                serverError: "Server error - please try again later",
+                rateLimitError: "Rate limit exceeded - please wait 2 seconds",
+                validationError: "Invalid input - check your request format",
+                apiKeyError: "API configuration error - service unavailable",
+                groqApiError: "Translation service error - please try again"
             },
             ru: {
                 appName: "Эларус",
@@ -702,7 +726,13 @@ print(f"Translation: {result['translated_text']}")<br>
                 usage4: "Управление контентом: Автоматизируйте перевод пользовательского контента",
                 usage5: "Инструменты разработчика: Создавайте плагины и расширения для перевода",
                 githubLinkText: "Ознакомьтесь с репозиторием GitHub для полной документации, примеров и исходного кода.",
-                responseTime: "Время ответа: "
+                responseTime: "Время ответа: ",
+                networkError: "Ошибка сети - проверьте соединение",
+                serverError: "Ошибка сервера - попробуйте позже",
+                rateLimitError: "Превышен лимит запросов - подождите 2 секунды",
+                validationError: "Неверный ввод - проверьте формат запроса",
+                apiKeyError: "Ошибка конфигурации API - сервис недоступен",
+                groqApiError: "Ошибка сервиса перевода - попробуйте снова"
             }
         };
     
@@ -837,6 +867,45 @@ print(f"Translation: {result['translated_text']}")<br>
             `;
         }
     
+        function createErrorBox(errorData) {
+            const t = translations[currentLanguage];
+            const errorType = errorData.error_type || 'unknown_error';
+            const errorMessage = errorData.error || t.unknownError;
+            const errorDetails = errorData.details || '';
+            
+            let userFriendlyMessage = t.unknownError;
+            
+            switch(errorType) {
+                case 'rate_limit_error':
+                    userFriendlyMessage = t.rateLimitError;
+                    break;
+                case 'validation_error':
+                    userFriendlyMessage = t.validationError;
+                    break;
+                case 'api_key_error':
+                    userFriendlyMessage = t.apiKeyError;
+                    break;
+                case 'groq_api_error':
+                    userFriendlyMessage = t.groqApiError;
+                    break;
+                case 'network_error':
+                    userFriendlyMessage = t.networkError;
+                    break;
+                default:
+                    userFriendlyMessage = t.serverError;
+            }
+            
+            return `
+                <div class="result-box result-error">
+                    <div class="result-label">Error <span class="error-type">${errorType}</span></div>
+                    <div class="result-value">
+                        <strong>${userFriendlyMessage}</strong>
+                        ${errorDetails ? `<div class="error-details">${errorDetails}</div>` : ''}
+                    </div>
+                </div>
+            `;
+        }
+    
         async function translateText() {
             await performTranslation('/api/translate');
         }
@@ -904,7 +973,7 @@ print(f"Translation: {result['translated_text']}")<br>
                     responseTime.textContent = `${t.responseTime}${responseTimeMs}ms`;
                     
                 } else {
-                    resultDiv.innerHTML = `<div class="result-box result-error"><strong>${t.error}</strong> ${data.error || data.details || t.unknownError}</div>`;
+                    resultDiv.innerHTML = createErrorBox(data);
                     responseTime.textContent = `${t.responseTime}${responseTimeMs}ms`;
                 }
             } catch (error) {
@@ -912,7 +981,14 @@ print(f"Translation: {result['translated_text']}")<br>
                 const responseTimeMs = (endTime - startTime).toFixed(0);
                 
                 console.error('Translation error:', error);
-                resultDiv.innerHTML = `<div class="result-box result-error"><strong>${t.error}</strong> ${t.unknownError}</div>`;
+                
+                const networkErrorData = {
+                    error: t.networkError,
+                    details: error.message,
+                    error_type: 'network_error'
+                };
+                
+                resultDiv.innerHTML = createErrorBox(networkErrorData);
                 responseTime.textContent = `${t.responseTime}${responseTimeMs}ms`;
             }
         }
